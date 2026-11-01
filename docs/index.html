@@ -145,7 +145,7 @@
     <header>
       <span class="eyebrow">NYU Stern · Building with AI · Fall 2026</span>
       <h1>SearchDesk</h1>
-      <p class="tagline">SearchDesk helps first-time acquisition searchers screen business listings against their buy box and financial criteria in minutes, so they can quickly decide what to pass on and what to dig into.</p>
+      <p class="tagline">SearchDesk is the home base for first-time acquisition searchers: every deal, from brokers or direct outreach, captured, screened, and moved forward in one pipeline.</p>
       <div class="cta-row">
         <a class="btn" href="#live-demo" onclick="window.posthog && posthog.capture('clicked_try_product')">See the Product →</a>
         <a class="btn btn-secondary" href="#prd">Read the Living PRD</a>
@@ -171,16 +171,16 @@
       <p class="meta">Updated every week as we test with real users and learn what works.</p>
 
       <h3>1. Target User & The Job to Be Done</h3>
-      <p><strong>Who is this for?</strong> First-time searchers at NYU Stern exploring entrepreneurship through acquisition (ETA) who are in their first 1–3 months of searching. For example, me (Jordan), looking at services businesses.</p>
-      <p><strong>The painful "Before" workflow:</strong> Listings are easy to find through brokers and public sites like BizBuySell, but each one takes too long to evaluate. The searcher has to manually check it against their buy box (industry, size, location, owner situation) and then work through the financials (cash flow, asking price multiple, whether an SBA loan would cover it) in a spreadsheet. For a beginner, that feels slow and intimidating, so promising deals sit unreviewed and the search stalls.</p>
-      <p><strong>The "After" workflow with this product:</strong> The searcher pastes in a listing. In under a minute, SearchDesk shows how well it fits their buy box, gives a quick financial snapshot, and recommends "pass" or "dig deeper," with the reasons in plain English.</p>
+      <p><strong>Who is this for?</strong> First-time ETA searchers in their first 1–3 months who juggle broker deals (teasers, NDAs, CIMs) and direct outreach to owners. Evidence: an ETA owner I spoke with who completed a search said a CRM like HubSpot was "absolutely necessary."</p>
+      <p><strong>The painful "Before" workflow:</strong> Teasers sit in email, contacts in HubSpot, numbers in Excel, and next steps in the searcher's head. Broker deals and direct-outreach deals are tracked in different places, and follow-ups slip during a long search.</p>
+      <p><strong>The "After" workflow with this product:</strong> Every deal, from either channel, lives in one SearchDesk pipeline with its key facts, buy box fit, a quick financial read, its stage, and a next step with a date.</p>
 
       <h3>2. Scope & Explicit Non-Goals</h3>
       <ul>
-        <li><strong>In Scope (Core Workflow):</strong> (1) Set your buy box once. (2) Paste a listing (text from BizBuySell or a broker teaser). (3) Get a buy box fit check and a quick financial snapshot. (4) See a pass / dig deeper verdict with the reasons. Example buy box (mine): "boring," fragmented B2B, commercial, and home services; Northeast US; SDE of $500K–$1M; steady, slow growth; ideally an owner who's retiring.</li>
-        <li><strong>Out of Scope #1:</strong> No automatic deal sourcing. Listings are pasted in by hand. (Future idea: pull new deals daily or weekly.)</li>
-        <li><strong>Out of Scope #2:</strong> No outreach or follow-up tracking. No CRM, reminders, or email integration in v1.</li>
-        <li><strong>Out of Scope #3:</strong> No full valuation or financial advice. SearchDesk is a quick screen, not a full model, LOI, or investment decision.</li>
+        <li><strong>In Scope (Core Workflow):</strong> Add a deal (broker teaser or direct outreach) → enter its key facts → see buy box fit + a quick financial read → save it to the pipeline with a stage and next step. Each searcher sets their buy box once (target industries, geography, deal size, and seller situation), and every deal is checked against it.</li>
+        <li><strong>Out of Scope #1:</strong> No AI teaser reading yet. Facts are typed in by hand; automatic teaser reading is planned with an API key in a later build.</li>
+        <li><strong>Out of Scope #2:</strong> No email or calendar sync, so no full CRM integration in v1.</li>
+        <li><strong>Out of Scope #3:</strong> No automatic deal sourcing or full valuation. It's a quick screen, not a model or investment advice.</li>
       </ul>
 
       <h3>3. How It Works Under the Hood & Riskiest Assumption (Week 2+)</h3>
@@ -218,7 +218,7 @@
         <ul>
           <li><strong>What shipped:</strong> Git, GitHub CLI, and Claude Code are installed and working. The repo is in the building-with-ai-f26 org. The Product Page is live on GitHub Pages, and PRD v1 is published. <em>Local prototype: [results and screenshot to be added]</em></li>
           <li><strong>Things learned with AI:</strong> Terminal basics (cd, folders), the difference between a commit and a push, keeping API keys in .env and out of GitHub, and that a narrow core workflow makes the PRD much easier to write.</li>
-          <li><strong>What broke / changed in PRD:</strong> I created the repo under my personal account first, then recreated it in the class org and renamed it to the netid format. <code>cd ~/Desktop</code> failed because OneDrive moves the Windows Desktop. Copying &lt;placeholder&gt; text literally into commands caused errors. PowerShell blocked npm until I set the execution policy to RemoteSigned. Product focus shifted from outreach tracking to deal screening after I realized evaluating listings, not finding them, is the real bottleneck.</li>
+          <li><strong>What broke / changed in PRD:</strong> I created the repo under my personal account first, then recreated it in the class org and renamed it to the netid format. <code>cd ~/Desktop</code> failed because OneDrive moves the Windows Desktop. Copying &lt;placeholder&gt; text literally into commands caused errors. PowerShell blocked npm until I set the execution policy to RemoteSigned. Product focus shifted twice: first from outreach tracking to a deal-screening calculator, because evaluating listings seemed like the bottleneck, then to a full search pipeline after I realized a spreadsheet already handles the math and an ETA owner told me a CRM was essential.</li>
           <li><strong>Cost & time this week:</strong> $20/month Claude Pro subscription (no extra per-prompt charges); GitHub, GitHub Pages, and PostHog are free tier ($0) · 2 hours (setup + PRD)</li>
         </ul>
       </div>
