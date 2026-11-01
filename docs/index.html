@@ -137,6 +137,21 @@
       font-size: 13px;
       color: var(--muted);
     }
+    figure {
+      margin: 16px 0 0;
+    }
+    figure img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    figcaption {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
@@ -157,12 +172,17 @@
     <section id="live-demo">
       <h2>Product Showcase (Prototype / Live App / 2-Min Video)</h2>
       <p>
-        <strong>Current Status:</strong> [Build 1: local prototype / Builds 2–4: local app / Build 5: cloud app]<br />
-        <strong>Demo:</strong> [Add a screenshot or GIF now; add the live cloud app URL in Build 5.]
+        <strong>Current Status:</strong> Build 1: local prototype.<br />
+        <strong>Demo:</strong> Screenshots of the local prototype below (fictional sample deals). Live cloud app URL coming in Build 5.
       </p>
-      <p class="meta">
-        Ask your coding agent to embed a screenshot or GIF of your local prototype for Build 1. Keep this evidence current, then add your cloud app link and two-minute video in Build 5.
-      </p>
+      <figure>
+        <a href="images/build1-pipeline.png"><img src="images/build1-pipeline.png" alt="SearchDesk pipeline view with three sample deals grouped by stage, showing buy box fit, verdict, and an overdue next step highlighted in red" /></a>
+        <figcaption>Pipeline: every deal grouped by stage, with channel, buy box fit, verdict, and overdue next steps flagged in red.</figcaption>
+      </figure>
+      <figure>
+        <a href="images/build1-screen.png"><img src="images/build1-screen.png" alt="SearchDesk instant screen for a sample deal showing the buy box checklist, capital stack table, estimated DSCR, and a Dig deeper verdict" /></a>
+        <figcaption>Instant screen: buy box checklist, capital stack (SBA, seller note, equity), rough DSCR, and a suggested verdict with reasons. Click to enlarge.</figcaption>
+      </figure>
     </section>
 
     <!-- LIVING PRD (Updated every week!) -->
@@ -191,11 +211,11 @@
       <div class="grid-2">
         <div class="stat-box">
           <div class="stat-label">Cumulative Build Spend</div>
-          <div class="stat-value">[Record actual spend]</div>
+          <div class="stat-value">$20 (Claude Pro subscription)</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Est. Cost Per User Run</div>
-          <div class="stat-value">[Not yet estimated]</div>
+          <div class="stat-value">$0 (no AI API calls yet)</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">User Evidence (Analytics from Build 2)</div>
@@ -216,10 +236,10 @@
       <div class="log-entry">
         <h3>Build 1 · Intent.md & Throwaway Prototype (Due Nov 9)</h3>
         <ul>
-          <li><strong>What shipped:</strong> Git, GitHub CLI, and Claude Code are installed and working. The repo is in the building-with-ai-f26 org. The Product Page is live on GitHub Pages, and PRD v1 is published. <em>Local prototype: [results and screenshot to be added]</em></li>
+          <li><strong>What shipped:</strong> Git, GitHub CLI, and Claude Code are installed and working. The repo is in the building-with-ai-f26 org. The Product Page is live on GitHub Pages, and PRD v1 is published. Local prototype (single web page, data saved in the browser, screenshots above): set a buy box once; add broker or direct-outreach deals; get an instant screen using SDE or EBITDA, with a buy box checklist, price multiple, and a suggested "dig deeper" or "pass" verdict; model a capital stack (SBA loan, seller note, buyer and investor equity) with rough debt service and DSCR; and track every deal in a pipeline by stage, with next steps and overdue items flagged.</li>
           <li><strong>Things learned with AI:</strong> Terminal basics (cd, folders), the difference between a commit and a push, keeping API keys in .env and out of GitHub, and that a narrow core workflow makes the PRD much easier to write.</li>
           <li><strong>What broke / changed in PRD:</strong> I created the repo under my personal account first, then recreated it in the class org and renamed it to the netid format. <code>cd ~/Desktop</code> failed because OneDrive moves the Windows Desktop. Copying &lt;placeholder&gt; text literally into commands caused errors. PowerShell blocked npm until I set the execution policy to RemoteSigned. Product focus shifted twice: first from outreach tracking to a deal-screening calculator, because evaluating listings seemed like the bottleneck, then to a full search pipeline after I realized a spreadsheet already handles the math and an ETA owner told me a CRM was essential.</li>
-          <li><strong>Cost & time this week:</strong> $20/month Claude Pro subscription (no extra per-prompt charges); GitHub, GitHub Pages, and PostHog are free tier ($0) · 2 hours (setup + PRD)</li>
+          <li><strong>Cost & time this week:</strong> $20/month Claude Pro subscription (no extra per-prompt charges); GitHub, GitHub Pages, and PostHog are free tier ($0) · 3 hours (2 setup + PRD, 1 prototype)</li>
         </ul>
       </div>
 
