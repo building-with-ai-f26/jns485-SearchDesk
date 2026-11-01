@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SearchDesk · Local Prototype</title>
+  <!--
+    SearchDesk local prototype (Build 1).
+    One self-contained file: plain HTML, CSS, and JavaScript. No libraries, no API keys.
+    Deals, buy box, and assumptions are saved in this browser's localStorage.
+  -->
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #4b5563;
+      --border: #e5e7eb;
+      --accent: #1d63dc;
+      --tag-bg: #eff6ff;
+      --tag-text: #1e40af;
+      --good: #15803d;
+      --good-bg: #f0fdf4;
+      --bad: #b91c1c;
+      --bad-bg: #fef2f2;
+      --warn: #b45309;
+      --warn-bg: #fffbeb;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "DM Sans", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 36px 20px 80px; }
+    header { border-bottom: 1px solid var(--border); padding-bottom: 22px; margin-bottom: 24px; }
+    .eyebrow {
+      display: inline-block; font-size: 12px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; background: var(--tag-bg); color: var(--tag-text);
+      padding: 4px 10px; border-radius: 999px; margin-bottom: 10px;
+    }
+    h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02em; }
+    .tagline { font-size: 17px; color: var(--muted); margin: 0 0 16px; }
+    .cta-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .btn {
+      display: inline-block; padding: 9px 16px; border-radius: 8px; font-weight: 600; font-size: 14px;
+      text-decoration: none; background: var(--accent); color: #fff; border: 1px solid var(--accent);
+      cursor: pointer; font-family: inherit;
+    }
+    .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .btn-small { padding: 5px 10px; font-size: 13px; }
+    .btn-link { background: none; border: none; color: var(--accent); cursor: pointer; font: inherit; font-size: 13px; padding: 0; }
+    section {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 22px 24px; margin-bottom: 22px;
+    }
+    h2 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
+    h3 { font-size: 15px; margin: 0 0 8px; }
+    h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 16px 0 6px; }
+    .meta { font-size: 13px; color: var(--muted); }
+    .section-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+
+    /* Form fields */
+    .field { margin-bottom: 12px; }
+    .field label, .field .label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .hint { font-weight: 400; color: var(--muted); }
+    input[type="text"], input[type="number"], input[type="date"], input[type="url"], select, textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px;
+      font: inherit; font-size: 14px; background: #fff; color: var(--text);
+    }
+    textarea { min-height: 110px; resize: vertical; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .checks { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
+    .checks label { display: flex; align-items: center; gap: 6px; font-weight: 400; }
+    .seg { display: inline-flex; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; }
+    .seg label { padding: 7px 14px; font-size: 14px; font-weight: 600; cursor: pointer; margin: 0; }
+    .seg input { position: absolute; opacity: 0; pointer-events: none; }
+    .seg label:has(input:checked) { background: var(--accent); color: #fff; }
+    .seg label + label { border-left: 1px solid #d1d5db; }
+
+    /* Buy box */
+    details > summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary::before { content: "▸"; color: var(--muted); }
+    details[open] > summary::before { content: "▾"; }
+    .buybox-body { margin-top: 16px; }
+    .note { font-size: 12px; color: var(--warn); margin-top: 4px; }
+
+    /* Add deal + instant screen */
+    .add-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 22px; }
+    .screen-panel {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px; align-self: start; position: sticky; top: 12px;
+    }
+    .assumptions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .verdict { font-weight: 700; font-size: 16px; padding: 8px 12px; border-radius: 8px; margin-top: 12px; }
+    .verdict-dig { background: var(--good-bg); color: var(--good); border: 1px solid #bbf7d0; }
+    .verdict-pass { background: var(--bad-bg); color: var(--bad); border: 1px solid #fecaca; }
+    .verdict-none { background: #f3f4f6; color: var(--muted); border: 1px solid var(--border); font-weight: 600; font-size: 14px; }
+    .reasons { margin: 8px 0 0; padding-left: 18px; font-size: 14px; }
+    .reasons li { margin-bottom: 4px; }
+    .checklist { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+    .checklist li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px dashed var(--border); }
+    .checklist li:last-child { border-bottom: none; }
+    .checklist .mark { font-weight: 700; width: 18px; display: inline-block; }
+    .checklist .pass .mark { color: var(--good); }
+    .checklist .fail .mark { color: var(--bad); }
+    .checklist .unknown .mark { color: var(--muted); }
+    .checklist .detail { color: var(--muted); text-align: right; }
+    .tag-pref { font-size: 11px; color: var(--muted); font-weight: 400; }
+    .fin { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; font-size: 14px; margin: 0; }
+    .fin dt { color: var(--muted); }
+    .fin dd { margin: 0; font-weight: 600; text-align: right; }
+    .est-badge { font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0; background: var(--warn-bg); color: var(--warn); padding: 1px 7px; border-radius: 999px; }
+    .disclaimer { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
+    .save-box { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 14px; }
+    .form-msg { font-size: 13px; margin-top: 8px; min-height: 18px; }
+    .form-msg.error { color: var(--bad); }
+    .form-msg.ok { color: var(--good); }
+
+    /* Pipeline */
+    .stage-group { margin-top: 18px; }
+    .stage-group h3 { display: flex; align-items: center; gap: 8px; }
+    .count { font-size: 12px; background: #f3f4f6; color: var(--muted); border-radius: 999px; padding: 1px 8px; }
+    .stage-group.empty h3 { color: var(--muted); }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+    .deal-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: #fff; font-size: 14px; }
+    .deal-card.overdue { border-color: #fca5a5; box-shadow: inset 4px 0 0 var(--bad); }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+    .deal-name a { color: inherit; }
+    .badges { display: flex; gap: 4px; flex-shrink: 0; }
+    .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--tag-bg); color: var(--tag-text); white-space: nowrap; }
+    .badge.direct { background: #f5f3ff; color: #5b21b6; }
+    .badge.sample { background: #f3f4f6; color: var(--muted); }
+    .card-row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 8px 0; }
+    .chip { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+    .chip.dig { background: var(--good-bg); color: var(--good); }
+    .chip.pass { background: var(--bad-bg); color: var(--bad); }
+    .chip.fit { background: #f3f4f6; color: var(--text); }
+    .next { font-size: 13px; padding: 6px 8px; background: var(--bg); border-radius: 6px; }
+    .next.overdue { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
+    .next.today { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
+    .card-actions { display: flex; gap: 6px; margin-top: 10px; align-items: center; }
+    .card-actions select { flex: 1; padding: 5px 8px; font-size: 13px; }
+    .empty-note { margin: 0; }
+
+    @media (max-width: 860px) {
+      .add-grid { grid-template-columns: 1fr; }
+      .screen-panel { position: static; }
+    }
+    @media (max-width: 520px) {
+      .row2, .row3, .assumptions { grid-template-columns: 1fr; }
+      section { padding: 18px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="eyebrow">Local prototype · Build 1</span>
+      <h1>SearchDesk</h1>
+      <p class="tagline">Every deal, from brokers or direct outreach, captured, screened, and moved forward in one pipeline.</p>
+      <div class="cta-row">
+        <a class="btn btn-secondary" href="#buybox">1. Buy box</a>
+        <a class="btn" href="#add">2. Add a deal</a>
+        <a class="btn btn-secondary" href="#pipeline">3. Pipeline</a>
+      </div>
+      <p class="meta">Data is saved in this browser only. All numbers are rough estimates for screening, not financial or investment advice.</p>
+    </header>
+
+    <!-- 1. BUY BOX -->
+    <section id="buybox">
+      <details>
+        <summary><h2>1. Your buy box</h2><span id="bb-summary" class="meta"></span></summary>
+        <div class="buybox-body">
+          <div class="field">
+            <span class="label">Target industries <span class="hint">(must match)</span></span>
+            <div class="checks" id="bb-industries"></div>
+          </div>
+          <div class="field">
+            <label for="bb-states">Target states <span class="hint">(must match; two-letter codes, comma separated)</span></label>
+            <input type="text" id="bb-states" />
+            <div class="note" id="bb-states-note"></div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="bb-sde-min">SDE minimum <span class="hint">(must match)</span></label>
+              <input type="text" id="bb-sde-min" inputmode="decimal" />
+            </div>
+            <div class="field">
+              <label for="bb-sde-max">SDE maximum</label>
+              <input type="text" id="bb-sde-max" inputmode="decimal" />
+            </div>
+          </div>
+          <div class="field">
+            <span class="label">Seller situation <span class="hint">(preference)</span></span>
+            <div class="checks"><label><input type="checkbox" id="bb-retiring" /> Prefer a retiring owner</label></div>
+          </div>
+          <div class="field">
+            <span class="label">Growth you're looking for <span class="hint">(preference)</span></span>
+            <div class="checks" id="bb-growth"></div>
+          </div>
+          <button type="button" class="btn-link" id="bb-reset">Reset buy box to defaults</button>
+        </div>
+      </details>
+    </section>
+
+    <!-- 2. ADD A DEAL + INSTANT SCREEN -->
+    <section id="add">
+      <div class="section-head"><h2 id="form-title">2. Add a deal</h2><span class="meta">The screen on the right updates as you type.</span></div>
+      <form id="deal-form" novalidate>
+        <div class="add-grid">
+          <div>
+            <div class="field">
+              <span class="label">Channel</span>
+              <div class="seg">
+                <label><input type="radio" name="channel" value="Broker" checked /> Broker</label>
+                <label><input type="radio" name="channel" value="Direct outreach" /> Direct outreach</label>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label for="f-name">Business name</label>
+                <input type="text" id="f-name" placeholder="e.g., Project Harbor" />
+              </div>
+              <div class="field">
+                <label for="f-industry">Industry</label>
+                <select id="f-industry"></select>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label for="f-desc">What they do <span class="hint">(optional)</span></label>
+                <input type="text" id="f-desc" placeholder="e.g., Commercial cleaning" />
+              </div>
+              <div class="field">
+                <label for="f-state">State</label>
+                <select id="f-state"></select>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label for="f-contact">Contact name</label>
+                <input type="text" id="f-contact" />
+              </div>
+              <div class="field">
+                <label for="f-role">Contact role</label>
+                <select id="f-role">
+                  <option>Broker</option>
+                  <option>Owner</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="f-link">Listing link <span class="hint">(optional)</span></label>
+              <input type="url" id="f-link" placeholder="https://" />
+            </div>
+            <div class="row3">
+              <div class="field">
+                <label for="f-price">Asking price <span class="hint" id="price-hint"></span></label>
+                <input type="text" id="f-price" inputmode="decimal" placeholder="e.g., 2.4M" />
+              </div>
+              <div class="field">
+                <label for="f-sde">SDE</label>
+                <input type="text" id="f-sde" inputmode="decimal" placeholder="e.g., 750K" />
+              </div>
+              <div class="field">
+                <label for="f-revenue">Revenue</label>
+                <input type="text" id="f-revenue" inputmode="decimal" placeholder="e.g., 3.9M" />
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label for="f-growth">Growth</label>
+                <select id="f-growth"></select>
+              </div>
+              <div class="field">
+                <label for="f-reason">Reason for sale</label>
+                <select id="f-reason"></select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="f-notes">Notes <span class="hint">(paste teaser text here)</span></label>
+              <textarea id="f-notes"></textarea>
+            </div>
+          </div>
+
+          <aside class="screen-panel">
+            <h3>Instant screen</h3>
+            <div class="assumptions">
+              <div class="field">
+                <label for="a-rate">SBA loan rate (%)</label>
+                <input type="number" id="a-rate" step="0.25" min="0" />
+              </div>
+              <div class="field">
+                <label for="a-salary">Your salary ($/yr)</label>
+                <input type="text" id="a-salary" inputmode="decimal" />
+              </div>
+            </div>
+            <div id="screen"></div>
+
+            <div class="save-box">
+              <h3>Save to pipeline</h3>
+              <div class="field">
+                <label for="f-stage">Stage</label>
+                <select id="f-stage"></select>
+              </div>
+              <div class="field">
+                <label for="f-next">Next step</label>
+                <input type="text" id="f-next" placeholder="e.g., Sign NDA and request CIM" />
+              </div>
+              <div class="field">
+                <label for="f-due">Due date</label>
+                <input type="date" id="f-due" />
+              </div>
+              <div class="cta-row" style="margin-bottom:0">
+                <button type="submit" class="btn" id="save-btn">Save to pipeline</button>
+                <button type="button" class="btn btn-secondary" id="cancel-btn" hidden>Cancel edit</button>
+              </div>
+              <div class="form-msg" id="form-msg"></div>
+            </div>
+          </aside>
+        </div>
+      </form>
+    </section>
+
+    <!-- 3. PIPELINE -->
+    <section id="pipeline">
+      <div class="section-head">
+        <h2>3. Pipeline</h2>
+        <span id="pipe-summary" class="meta"></span>
+        <button type="button" class="btn-link" id="reset-samples">Reload sample deals</button>
+      </div>
+      <div id="board"></div>
+    </section>
+  </div>
+
+  <script>
+    // ================= Settings =================
+    const STAGES = ["Sourced", "Contacted / Teaser received", "NDA signed", "CIM review", "Owner call", "LOI", "Passed"];
+    const INDUSTRIES = [
+      "B2B services", "Commercial services", "Home services", "Construction / trades", "Manufacturing",
+      "Distribution", "Healthcare services", "Software / tech", "Retail / consumer", "Restaurant / hospitality", "Other"
+    ];
+    const GROWTH = ["Declining", "Flat", "Slow growth", "Fast growth"];
+    const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+      "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX",
+      "UT","VT","VA","WA","WV","WI","WY"];
+
+    const DEFAULT_BUYBOX = {
+      industries: ["B2B services", "Commercial services", "Home services"],
+      states: ["CT", "ME", "MA", "NH", "RI", "VT", "NJ", "NY", "PA"], // Northeast US
+      sdeMin: 500000,
+      sdeMax: 1000000,
+      preferRetiring: true,
+      growth: ["Flat", "Slow growth"] // "slow / steady"
+    };
+    const DEFAULT_ASSUMPTIONS = { rate: 10.5, salary: 100000 };
+
+    const DOWN_PAYMENT = 0.10;  // SBA 7(a): 10% down
+    const TERM_YEARS = 10;      // 10-year term
+    const TARGET_DSCR = 1.25;   // coverage lenders commonly look for
+    const HIGH_MULTIPLE = 4.5;  // flag asking prices above this multiple of SDE
+
+    const DEAL_KEY = "searchdesk.deals.v1";
+    const BB_KEY = "searchdesk.buybox.v1";
+    const ASSUME_KEY = "searchdesk.assumptions.v1";
+
+    // ================= Small helpers =================
+    function load(key, fallback) {
+      try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+      catch (e) { return fallback; }
+    }
+    function store(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage unavailable */ }
+    }
+    // Accepts "2,400,000", "$2.4M", "750k". Returns null if empty, NaN if not a number.
+    function parseMoney(str) {
+      if (str == null) return null;
+      const s = String(str).trim().replace(/[$,\s]/g, "");
+      if (!s) return null;
+      const m = s.match(/^(\d*\.?\d+)([kKmM])?$/);
+      if (!m) return NaN;
+      let n = parseFloat(m[1]);
+      if (m[2]) n *= /k/i.test(m[2]) ? 1e3 : 1e6;
+      return n;
+    }
+    function num(x) { return Number.isFinite(x) ? x : null; }
+    function money(n) { return "$" + Math.round(n).toLocaleString("en-US"); }
+    function moneyShort(n) {
+      const a = Math.abs(n);
+      if (a >= 1e6) return "$" + (n / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, "") + "M";
+      if (a >= 1e3) return "$" + Math.round(n / 1e3) + "K";
+      return "$" + Math.round(n);
+    }
+    function escapeHtml(s) {
+      return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    }
+    function todayISO() { return addDaysISO(0); }
+    function addDaysISO(days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      const pad = n => String(n).padStart(2, "0");
+      return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    }
+    function formatDate(iso) {
+      return new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+    function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+    // ================= Screening logic (no page code here) =================
+    function monthlyPayment(principal, ratePct, years) {
+      const r = ratePct / 100 / 12, n = years * 12;
+      return r === 0 ? principal / n : principal * r / (1 - Math.pow(1 + r, -n));
+    }
+    function loanFromPayment(payment, ratePct, years) {
+      const r = ratePct / 100 / 12, n = years * 12;
+      return r === 0 ? payment * n : payment * (1 - Math.pow(1 + r, -n)) / r;
+    }
+
+    function financialRead(deal, a) {
+      const out = {};
+      const sde = deal.sde, price = deal.askingPrice;
+      if (sde != null) out.cashForDebt = sde - a.salary;
+      if (sde != null && deal.revenue) out.margin = sde / deal.revenue;
+      if (price && sde > 0) out.multiple = price / sde;
+      if (price) {
+        out.downPayment = price * DOWN_PAYMENT;
+        out.loan = price - out.downPayment;
+        out.monthly = monthlyPayment(out.loan, a.rate, TERM_YEARS);
+        out.annualDebt = out.monthly * 12;
+        if (sde != null) out.dscr = out.cashForDebt / out.annualDebt;
+      }
+      // Highest price that keeps DSCR at the target, with 10% down.
+      if (sde != null && out.cashForDebt > 0) {
+        const maxMonthly = out.cashForDebt / TARGET_DSCR / 12;
+        out.maxPrice = loanFromPayment(maxMonthly, a.rate, TERM_YEARS) / (1 - DOWN_PAYMENT);
+      }
+      return out;
+    }
+
+    function buyBoxChecks(deal, bb) {
+      const status = (known, ok) => !known ? "unknown" : ok ? "pass" : "fail";
+      return [
+        { key: "industry", label: "Industry", must: true,
+          status: status(!!deal.industry, bb.industries.includes(deal.industry)), detail: deal.industry || "Not entered" },
+        { key: "location", label: "Location", must: true,
+          status: status(!!deal.state, bb.states.includes(deal.state)), detail: deal.state || "Not entered" },
+        { key: "size", label: "Size (SDE)", must: true,
+          status: status(deal.sde != null, deal.sde >= bb.sdeMin && deal.sde <= bb.sdeMax),
+          detail: deal.sde != null ? moneyShort(deal.sde) : "Not entered" },
+        { key: "seller", label: "Seller situation", must: false,
+          status: !bb.preferRetiring ? "pass" : status(!!deal.saleReason, deal.saleReason === "Retiring"),
+          detail: !bb.preferRetiring ? "No preference" : (deal.saleReason || "Not entered") },
+        { key: "growth", label: "Growth", must: false,
+          status: status(!!deal.growth, bb.growth.includes(deal.growth)), detail: deal.growth || "Not entered" }
+      ];
+    }
+
+    // Returns the checklist, financial read, fit count, verdict ("Dig deeper" / "Pass" / null), and 2–3 reasons.
+    function screenDeal(deal, bb, a) {
+      const checks = buyBoxChecks(deal, bb);
+      const fin = financialRead(deal, a);
+      const fitCount = checks.filter(c => c.status === "pass").length;
+      if (checks.some(c => c.must && c.status === "unknown")) {
+        return { checks, fin, fitCount, verdict: null, reasons: ["Enter industry, state, and SDE to get a suggested verdict."] };
+      }
+
+      const neg = [], pos = [];
+      let pass = false;
+      const byKey = k => checks.find(c => c.key === k);
+
+      // Must-haves
+      if (byKey("industry").status === "fail") { pass = true; neg.push(`${deal.industry} is outside your target industries.`); }
+      if (byKey("location").status === "fail") { pass = true; neg.push(`It's in ${deal.state}, outside your target states.`); }
+      if (byKey("size").status === "fail") {
+        pass = true;
+        neg.push(`SDE of ${moneyShort(deal.sde)} is ${deal.sde < bb.sdeMin ? "below" : "above"} your ${moneyShort(bb.sdeMin)}–${moneyShort(bb.sdeMax)} range.`);
+      }
+      if (!pass) pos.push("Fits your industry, location, and size targets.");
+
+      // Financing
+      if (fin.cashForDebt != null && fin.cashForDebt <= 0) {
+        pass = true;
+        neg.push(`SDE doesn't leave anything for loan payments after your ${moneyShort(a.salary)} salary.`);
+      } else if (fin.dscr != null) {
+        if (fin.dscr < TARGET_DSCR) {
+          pass = true;
+          neg.push(`At the asking price, cash flow after your salary covers estimated loan payments only ${fin.dscr.toFixed(2)}x, below the ~${TARGET_DSCR}x lenders usually look for.`);
+        } else {
+          pos.push(`Cash flow after your salary covers estimated loan payments ${fin.dscr.toFixed(2)}x (lenders usually look for ~${TARGET_DSCR}x).`);
+        }
+      } else if (fin.maxPrice) {
+        pos.push(`No asking price yet. To keep loan coverage at ${TARGET_DSCR}x, the price would need to be about ${moneyShort(fin.maxPrice)} or less.`);
+      }
+      if (fin.multiple != null && fin.multiple > HIGH_MULTIPLE) {
+        neg.push(`Asking ${fin.multiple.toFixed(1)}x SDE is on the high side for a business this size.`);
+      }
+
+      // Growth
+      if (deal.growth === "Declining") {
+        pass = true;
+        neg.push("Revenue is declining, which makes the cash flow harder to count on.");
+      } else if (byKey("growth").status === "fail") {
+        neg.push(`${deal.growth} doesn't match your growth preference${deal.growth === "Fast growth" ? "; check whether the price already assumes it continues" : ""}.`);
+      } else if (byKey("growth").status === "pass") {
+        pos.push(`${deal.growth} matches your preference for steady growth.`);
+      }
+
+      // Seller
+      if (bb.preferRetiring && byKey("seller").status === "pass") pos.push("The owner is retiring, which matches your preferred seller situation.");
+      if (byKey("seller").status === "fail") neg.push("The owner isn't retiring, so ask why they're selling.");
+
+      const verdict = pass ? "Pass" : "Dig deeper";
+      // Pass: lead with the problems. Dig deeper: lead with the strengths, then one thing to check.
+      const ordered = pass ? neg.concat(pos) : pos.slice(0, 2).concat(neg, pos.slice(2));
+      return { checks, fin, fitCount, verdict, reasons: ordered.slice(0, 3) };
+    }
+
+    // ================= Sample data (fictional) =================
+    function sampleDeals() {
+      return [
+        {
+          id: "sample-1", sample: true, channel: "Broker", name: "Harbor Line Commercial Cleaning",
+          industry: "Commercial services", description: "Commercial cleaning", state: "MA",
+          contactName: "Dana Reyes", contactRole: "Broker", link: "",
+          askingPrice: 2400000, sde: 750000, revenue: 3900000, growth: "Slow growth", saleReason: "Retiring",
+          notes: "TEASER (fictional): Project Harbor. Established 1998 commercial cleaning company serving office parks, medical offices, and schools in eastern Massachusetts. About 85% recurring contract revenue, 120+ customers, none over 8% of revenue. Operations manager in place. Owner is retiring after 26 years and will support a 6-month transition.",
+          stage: "NDA signed", nextStep: "Review CIM financials and request 3 years of tax returns",
+          dueDate: addDaysISO(-2), createdAt: addDaysISO(-9)
+        },
+        {
+          id: "sample-2", sample: true, channel: "Broker", name: "Sunbelt Pool & Patio Services",
+          industry: "Home services", description: "Residential pool service", state: "FL",
+          contactName: "Marcus Hale", contactRole: "Broker", link: "",
+          askingPrice: 3800000, sde: 820000, revenue: 4100000, growth: "Fast growth", saleReason: "Other",
+          notes: "TEASER (fictional): Fast-growing pool service and patio maintenance company in the Tampa area. Revenue up 35% last year on new residential routes. Owner is leaving to pursue another venture. Seller expects strong growth to continue.",
+          stage: "Contacted / Teaser received", nextStep: "Send pass note to broker",
+          dueDate: addDaysISO(0), createdAt: addDaysISO(-3)
+        },
+        {
+          id: "sample-3", sample: true, channel: "Direct outreach", name: "Keystone Fire & Safety Inspections",
+          industry: "B2B services", description: "Fire safety inspections", state: "PA",
+          contactName: "Walt Brenner", contactRole: "Owner", link: "",
+          askingPrice: null, sde: 600000, revenue: 2200000, growth: "Flat", saleReason: "Retiring",
+          notes: "Direct outreach (fictional). Found via a state fire marshal contractor list. Owner (68) founded the business in 1991; inspects extinguishers, sprinklers, and alarms for ~900 commercial accounts in central PA. Said he's 'thinking about the next chapter.' Revenue and SDE are his rough numbers from the first call; need to verify.",
+          stage: "Owner call", nextStep: "Intro call: ask about revenue trend and key employees",
+          dueDate: addDaysISO(3), createdAt: addDaysISO(-5)
+        }
+      ];
+    }
+
+    // ================= Page code =================
+    let deals = [];
+    let buyBox = {};
+    let assumptions = {};
+    let editingId = null;
+    const $ = id => document.getElementById(id);
+
+    function persistDeals() { store(DEAL_KEY, deals); }
+
+    function fillSelect(id, options, placeholder) {
+      $(id).innerHTML = (placeholder ? `<option value="">${placeholder}</option>` : "") +
+        options.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join("");
+    }
+
+    // ----- Buy box -----
+    function renderBuyBoxEditor() {
+      $("bb-industries").innerHTML = INDUSTRIES.map(i =>
+        `<label><input type="checkbox" value="${escapeHtml(i)}" ${buyBox.industries.includes(i) ? "checked" : ""}/> ${escapeHtml(i)}</label>`).join("");
+      $("bb-growth").innerHTML = GROWTH.map(g =>
+        `<label><input type="checkbox" value="${escapeHtml(g)}" ${buyBox.growth.includes(g) ? "checked" : ""}/> ${escapeHtml(g)}</label>`).join("");
+      $("bb-states").value = buyBox.states.join(", ");
+      $("bb-sde-min").value = money(buyBox.sdeMin);
+      $("bb-sde-max").value = money(buyBox.sdeMax);
+      $("bb-retiring").checked = buyBox.preferRetiring;
+      $("bb-states-note").textContent = "";
+      renderBuyBoxSummary();
+    }
+
+    function renderBuyBoxSummary() {
+      const parts = [
+        buyBox.industries.join(", ") || "No industries",
+        buyBox.states.length + " states",
+        `SDE ${moneyShort(buyBox.sdeMin)}–${moneyShort(buyBox.sdeMax)}`,
+        buyBox.preferRetiring ? "retiring owner preferred" : null,
+        buyBox.growth.length ? buyBox.growth.join(" / ").toLowerCase() : null
+      ].filter(Boolean);
+      $("bb-summary").textContent = parts.join(" · ") + " (click to edit)";
+    }
+
+    function readBuyBox() {
+      const checked = sel => [...document.querySelectorAll(sel + " input:checked")].map(i => i.value);
+      const tokens = $("bb-states").value.toUpperCase().split(/[^A-Z]+/).filter(Boolean);
+      const unknown = tokens.filter(t => !STATES.includes(t));
+      $("bb-states-note").textContent = unknown.length ? "Not recognized: " + unknown.join(", ") : "";
+      const min = num(parseMoney($("bb-sde-min").value));
+      const max = num(parseMoney($("bb-sde-max").value));
+      buyBox = {
+        industries: checked("#bb-industries"),
+        states: [...new Set(tokens.filter(t => STATES.includes(t)))],
+        sdeMin: min != null ? min : buyBox.sdeMin,
+        sdeMax: max != null ? max : buyBox.sdeMax,
+        preferRetiring: $("bb-retiring").checked,
+        growth: checked("#bb-growth")
+      };
+    }
+
+    function onBuyBoxChange() {
+      readBuyBox();
+      store(BB_KEY, buyBox);
+      renderBuyBoxSummary();
+      renderScreen();
+      renderPipeline();
+    }
+
+    // ----- Add / edit form -----
+    function readForm() {
+      const v = id => $(id).value.trim();
+      return {
+        channel: document.querySelector('input[name="channel"]:checked').value,
+        name: v("f-name"), industry: v("f-industry"), description: v("f-desc"), state: v("f-state"),
+        contactName: v("f-contact"), contactRole: v("f-role"), link: v("f-link"),
+        askingPrice: num(parseMoney(v("f-price"))), sde: num(parseMoney(v("f-sde"))), revenue: num(parseMoney(v("f-revenue"))),
+        growth: v("f-growth"), saleReason: v("f-reason"), notes: $("f-notes").value,
+        stage: v("f-stage"), nextStep: v("f-next"), dueDate: v("f-due")
+      };
+    }
+
+    function updateChannelUI() {
+      const direct = document.querySelector('input[name="channel"]:checked').value === "Direct outreach";
+      $("price-hint").textContent = direct ? "(optional)" : "(required)";
+    }
+
+    function renderScreen() {
+      const s = screenDeal(readForm(), buyBox, assumptions);
+      const f = s.fin;
+      const verdictHtml = s.verdict
+        ? `<div class="verdict ${s.verdict === "Pass" ? "verdict-pass" : "verdict-dig"}">Suggested: ${s.verdict}</div>`
+        : `<div class="verdict verdict-none">Suggested verdict: waiting for details</div>`;
+      const reasons = `<ul class="reasons">${s.reasons.map(r => `<li>${escapeHtml(r)}</li>`).join("")}</ul>`;
+      const marks = { pass: "✓", fail: "✗", unknown: "–" };
+      const checklist = `<h4>Buy box check · ${s.fitCount}/5 fit</h4><ul class="checklist">` + s.checks.map(c =>
+        `<li class="${c.status}"><span><span class="mark">${marks[c.status]}</span>${c.label}${c.must ? "" : ' <span class="tag-pref">preference</span>'}</span><span class="detail">${escapeHtml(c.detail)}</span></li>`
+      ).join("") + "</ul>";
+
+      let finHtml = `<h4>Quick financial read <span class="est-badge">rough estimates</span></h4>`;
+      if (f.cashForDebt == null) {
+        finHtml += `<p class="meta">Enter SDE to see the financial read.</p>`;
+      } else {
+        const rows = [];
+        if (f.multiple != null) rows.push(["Price / SDE multiple", f.multiple.toFixed(1) + "x"]);
+        if (f.margin != null) rows.push(["SDE margin", Math.round(f.margin * 100) + "%"]);
+        if (f.loan != null) {
+          rows.push(["Down payment (10%)", money(f.downPayment)]);
+          rows.push([`SBA 7(a) loan (90%, ${TERM_YEARS} yr, ${assumptions.rate}%)`, money(f.loan)]);
+          rows.push(["Est. monthly loan payment", money(f.monthly)]);
+          rows.push(["Est. annual debt service", money(f.annualDebt)]);
+        } else {
+          rows.push(["Asking price", "Not provided"]);
+        }
+        rows.push([`Cash flow after ${moneyShort(assumptions.salary)} salary`, money(f.cashForDebt)]);
+        if (f.dscr != null) rows.push(["Est. DSCR (debt coverage)", f.dscr.toFixed(2) + "x"]);
+        if (f.maxPrice) rows.push([`Max price at ${TARGET_DSCR}x DSCR`, money(f.maxPrice)]);
+        finHtml += `<dl class="fin">${rows.map(r => `<dt>${escapeHtml(r[0])}</dt><dd>${escapeHtml(r[1])}</dd>`).join("")}</dl>`;
+      }
+      finHtml += `<p class="disclaimer">Rough estimates for screening only, not financial or investment advice. Ignores taxes, capex, working capital, seller notes, fees, and SBA guarantee costs.</p>`;
+
+      $("screen").innerHTML = verdictHtml + reasons + checklist + finHtml;
+    }
+
+    function showMsg(text, type) {
+      const el = $("form-msg");
+      el.textContent = text;
+      el.className = "form-msg " + (type || "");
+    }
+
+    function handleSave(e) {
+      e.preventDefault();
+      const d = readForm();
+      const missing = [];
+      if (!d.name) missing.push("business name");
+      if (!d.industry) missing.push("industry");
+      if (!d.state) missing.push("state");
+      if (d.sde == null) missing.push("SDE");
+      if (d.channel === "Broker" && d.askingPrice == null) missing.push("asking price (required for broker deals)");
+      [["f-price", "asking price"], ["f-sde", "SDE"], ["f-revenue", "revenue"]].forEach(([id, label]) => {
+        if (Number.isNaN(parseMoney($(id).value))) missing.push(`a number for ${label} (like 750000 or 750K)`);
+      });
+      if (d.link && !/^https?:\/\//i.test(d.link)) missing.push("a listing link starting with http:// or https://");
+      if (missing.length) { showMsg("Please add: " + missing.join(", ") + ".", "error"); return; }
+
+      if (editingId) {
+        const i = deals.findIndex(x => x.id === editingId);
+        if (i >= 0) deals[i] = Object.assign({}, deals[i], d);
+      } else {
+        deals.push(Object.assign({ id: newId(), createdAt: todayISO() }, d));
+      }
+      persistDeals();
+      const name = d.name;
+      resetForm();
+      renderPipeline();
+      showMsg(`Saved "${name}" to the pipeline.`, "ok");
+    }
+
+    function setFormValues(d) {
+      document.querySelectorAll('input[name="channel"]').forEach(r => { r.checked = r.value === d.channel; });
+      $("f-name").value = d.name || "";
+      $("f-industry").value = d.industry || "";
+      $("f-desc").value = d.description || "";
+      $("f-state").value = d.state || "";
+      $("f-contact").value = d.contactName || "";
+      $("f-role").value = d.contactRole || "Broker";
+      $("f-link").value = d.link || "";
+      $("f-price").value = d.askingPrice != null ? money(d.askingPrice) : "";
+      $("f-sde").value = d.sde != null ? money(d.sde) : "";
+      $("f-revenue").value = d.revenue != null ? money(d.revenue) : "";
+      $("f-growth").value = d.growth || "";
+      $("f-reason").value = d.saleReason || "";
+      $("f-notes").value = d.notes || "";
+      $("f-stage").value = d.stage || "Sourced";
+      $("f-next").value = d.nextStep || "";
+      $("f-due").value = d.dueDate || "";
+    }
+
+    function startEdit(id) {
+      const d = deals.find(x => x.id === id);
+      if (!d) return;
+      editingId = id;
+      setFormValues(d);
+      $("form-title").textContent = "2. Edit deal: " + d.name;
+      $("save-btn").textContent = "Update deal";
+      $("cancel-btn").hidden = false;
+      showMsg("", "");
+      updateChannelUI();
+      renderScreen();
+      $("add").scrollIntoView({ behavior: "smooth" });
+    }
+
+    function resetForm() {
+      $("deal-form").reset();
+      editingId = null;
+      $("form-title").textContent = "2. Add a deal";
+      $("save-btn").textContent = "Save to pipeline";
+      $("cancel-btn").hidden = true;
+      $("f-role").value = "Broker";
+      // form.reset() also clears the assumption inputs, so put them back
+      $("a-rate").value = assumptions.rate;
+      $("a-salary").value = money(assumptions.salary);
+      showMsg("", "");
+      updateChannelUI();
+      renderScreen();
+    }
+
+    // ----- Pipeline -----
+    function dueStatus(d, today) {
+      if (!d.dueDate || d.stage === "Passed") return "";
+      if (d.dueDate < today) return "overdue";
+      if (d.dueDate === today) return "today";
+      return "";
+    }
+
+    function cardHtml(d, today) {
+      const s = screenDeal(d, buyBox, assumptions);
+      const due = dueStatus(d, today);
+      const name = /^https?:\/\//i.test(d.link || "")
+        ? `<a href="${escapeHtml(d.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(d.name)}</a>`
+        : escapeHtml(d.name);
+      const where = [d.industry, d.state, d.description].filter(Boolean).map(escapeHtml).join(" · ");
+      const contact = d.contactName ? `<div class="meta">${escapeHtml(d.contactRole)}: ${escapeHtml(d.contactName)}</div>` : "";
+      const dueText = d.dueDate
+        ? ` · ${due === "overdue" ? "Overdue since " : due === "today" ? "Due today, " : "Due "}${formatDate(d.dueDate)}`
+        : "";
+      const stageOptions = STAGES.map(st => `<option ${st === d.stage ? "selected" : ""}>${escapeHtml(st)}</option>`).join("");
+      return `
+        <article class="deal-card ${due === "overdue" ? "overdue" : ""}">
+          <div class="card-top">
+            <strong class="deal-name">${name}</strong>
+            <span class="badges">
+              ${d.sample ? '<span class="badge sample">Sample</span>' : ""}
+              <span class="badge ${d.channel === "Direct outreach" ? "direct" : ""}">${d.channel === "Direct outreach" ? "Direct" : "Broker"}</span>
+            </span>
+          </div>
+          <div class="meta">${where}</div>
+          ${contact}
+          <div class="card-row">
+            <span class="chip fit">Buy box fit ${s.fitCount}/5</span>
+            ${s.verdict ? `<span class="chip ${s.verdict === "Pass" ? "pass" : "dig"}">${s.verdict}</span>` : ""}
+            ${s.fin.multiple != null ? `<span class="meta">${s.fin.multiple.toFixed(1)}x SDE</span>` : ""}
+            ${s.fin.dscr != null ? `<span class="meta">DSCR ${s.fin.dscr.toFixed(2)}x</span>` : ""}
+          </div>
+          <div class="next ${due}"><strong>Next:</strong> ${escapeHtml(d.nextStep || "No next step set")}${dueText}</div>
+          <div class="card-actions">
+            <select data-action="stage" data-id="${escapeHtml(d.id)}" aria-label="Stage">${stageOptions}</select>
+            <button type="button" class="btn btn-secondary btn-small" data-action="edit" data-id="${escapeHtml(d.id)}">Edit</button>
+            <button type="button" class="btn btn-secondary btn-small" data-action="delete" data-id="${escapeHtml(d.id)}">Delete</button>
+          </div>
+        </article>`;
+    }
+
+    function renderPipeline() {
+      const today = todayISO();
+      const active = deals.filter(d => d.stage !== "Passed").length;
+      const overdue = deals.filter(d => dueStatus(d, today) === "overdue").length;
+      $("pipe-summary").textContent =
+        `${active} active · ${deals.length - active} passed · ${overdue} overdue next step${overdue === 1 ? "" : "s"}`;
+      const byDue = (a, b) => (a.dueDate || "9999") < (b.dueDate || "9999") ? -1 : 1;
+      $("board").innerHTML = STAGES.map(stage => {
+        const list = deals.filter(d => d.stage === stage).sort(byDue);
+        return `
+          <div class="stage-group ${list.length ? "" : "empty"}">
+            <h3>${escapeHtml(stage)} <span class="count">${list.length}</span></h3>
+            ${list.length
+              ? `<div class="cards">${list.map(d => cardHtml(d, today)).join("")}</div>`
+              : `<p class="meta empty-note">No deals in this stage.</p>`}
+          </div>`;
+      }).join("");
+    }
+
+    // ----- Wiring -----
+    function init() {
+      buyBox = Object.assign({}, DEFAULT_BUYBOX, load(BB_KEY, {}));
+      assumptions = Object.assign({}, DEFAULT_ASSUMPTIONS, load(ASSUME_KEY, {}));
+      const stored = load(DEAL_KEY, null);
+      if (Array.isArray(stored)) {
+        deals = stored;
+      } else {
+        deals = sampleDeals(); // first visit: pre-load the demo deals
+        persistDeals();
+      }
+
+      fillSelect("f-industry", INDUSTRIES, "Select…");
+      fillSelect("f-state", STATES, "Select…");
+      fillSelect("f-growth", GROWTH, "Select…");
+      fillSelect("f-reason", ["Retiring", "Other"], "Select…");
+      fillSelect("f-stage", STAGES);
+      $("a-rate").value = assumptions.rate;
+      $("a-salary").value = money(assumptions.salary);
+      renderBuyBoxEditor();
+
+      // Buy box edits
+      $("buybox").addEventListener("change", onBuyBoxChange);
+      $("bb-states").addEventListener("input", onBuyBoxChange);
+      $("bb-reset").addEventListener("click", () => {
+        buyBox = JSON.parse(JSON.stringify(DEFAULT_BUYBOX));
+        store(BB_KEY, buyBox);
+        renderBuyBoxEditor();
+        renderScreen();
+        renderPipeline();
+      });
+
+      // Form: live screen, channel default role, save, cancel
+      const form = $("deal-form");
+      form.addEventListener("input", renderScreen);
+      form.addEventListener("change", renderScreen);
+      document.querySelectorAll('input[name="channel"]').forEach(r => r.addEventListener("change", () => {
+        $("f-role").value = r.value === "Direct outreach" ? "Owner" : "Broker";
+        updateChannelUI();
+      }));
+      form.addEventListener("submit", handleSave);
+      $("cancel-btn").addEventListener("click", resetForm);
+
+      // Assumptions (rate, salary)
+      const onAssume = () => {
+        const rate = parseFloat($("a-rate").value);
+        const salary = num(parseMoney($("a-salary").value));
+        if (Number.isFinite(rate) && rate >= 0) assumptions.rate = rate;
+        if (salary != null && salary >= 0) assumptions.salary = salary;
+        store(ASSUME_KEY, assumptions);
+        renderScreen();
+        renderPipeline();
+      };
+      $("a-rate").addEventListener("input", onAssume);
+      $("a-salary").addEventListener("input", onAssume);
+
+      // Pipeline actions
+      $("board").addEventListener("change", e => {
+        if (e.target.dataset.action !== "stage") return;
+        const d = deals.find(x => x.id === e.target.dataset.id);
+        if (d) { d.stage = e.target.value; persistDeals(); renderPipeline(); }
+      });
+      $("board").addEventListener("click", e => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+        const id = btn.dataset.id;
+        if (btn.dataset.action === "edit") startEdit(id);
+        if (btn.dataset.action === "delete") {
+          const d = deals.find(x => x.id === id);
+          if (d && confirm(`Delete "${d.name}" from your pipeline?`)) {
+            deals = deals.filter(x => x.id !== id);
+            if (editingId === id) resetForm();
+            persistDeals();
+            renderPipeline();
+          }
+        }
+      });
+      $("reset-samples").addEventListener("click", () => {
+        if (!confirm("Replace all deals with the 3 sample deals? Deals you added will be removed.")) return;
+        deals = sampleDeals();
+        persistDeals();
+        resetForm();
+        renderPipeline();
+      });
+
+      updateChannelUI();
+      renderScreen();
+      renderPipeline();
+    }
+
+    if (typeof document !== "undefined") init();
+  </script>
+</body>
+</html>

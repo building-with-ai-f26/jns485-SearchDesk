@@ -8,10 +8,10 @@
 - **Tech stack:** [e.g., Python 3.12 / FastAPI / Next.js / SQLite / OpenRouter API]
 
 ## 2. Commands
-- **Install dependencies:** `[e.g., npm install / uv sync]`
-- **Run locally:** `[e.g., npm run dev]`
-- **Run deterministic tests:** `[e.g., pytest / npm test]`
-- **Run model evals:** `[e.g., python tests/eval.py]`
+- **Install dependencies:** None. The prototype is a single HTML file with no libraries or API keys.
+- **Run locally:** Open `app/index.html` in a browser (Windows: `start app/index.html`; Mac: `open app/index.html`). Data is saved in that browser's localStorage.
+- **Run deterministic tests:** None yet. Check manually: add, edit, and delete a deal, then reopen the page to confirm it was saved.
+- **Run model evals:** None yet (no AI model in the prototype).
 
 ## 3. Non-Negotiable Engineering Rules
 1. **Plan before coding:** Before touching multiple files, propose a brief plan and wait for approval.

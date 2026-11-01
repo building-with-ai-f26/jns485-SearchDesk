@@ -42,4 +42,6 @@ git clone https://github.com/building-with-ai-f26/<your-repo-name>.git
 cd <your-repo-name>
 ```
 
+**Run the SearchDesk prototype:** there's nothing to install. Open `app/index.html` in your browser (Windows: `start app/index.html`; Mac: `open app/index.html`). Deals are saved in that browser, and 3 fictional sample deals load the first time you open it.
+
 If your app needs API keys, use a local environment file such as `.env`. Keep private keys out of source code, browser code, screenshots, and commits. The template ignores `.env`; `.env.example` contains placeholders only.
