@@ -96,7 +96,28 @@
       background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
       padding: 16px; align-self: start; position: sticky; top: 12px;
     }
-    .assumptions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .fin-inputs { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); gap: 6px 8px; align-items: center; font-size: 13px; }
+    .fin-inputs .hdr { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .fin-inputs input[type="number"] { padding: 5px 6px; font-size: 13px; }
+    .fin-inputs .src { font-weight: 600; }
+    .fin-inputs .na { color: var(--muted); text-align: center; }
+    .standby { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; font-size: 13px; margin: -2px 0 4px; }
+    .pct-total { font-size: 13px; margin-top: 8px; color: var(--muted); }
+    .pct-total.bad { color: var(--bad); font-weight: 600; }
+    .stack-bar { display: flex; height: 14px; border-radius: 4px; overflow: hidden; margin: 8px 0; background: #f3f4f6; }
+    .stack-bar span { display: block; height: 100%; }
+    .src-sba { background: #1d63dc; }
+    .src-seller { background: #d97706; }
+    .src-buyer { background: #15803d; }
+    .src-investor { background: #7c3aed; }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
+    .table-wrap { overflow-x: auto; }
+    table.sources { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; }
+    table.sources th, table.sources td { padding: 4px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    table.sources th:first-child, table.sources td:first-child { text-align: left; white-space: normal; }
+    table.sources th { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+    table.sources tfoot td { font-weight: 700; border-bottom: none; }
+    .sub { display: block; font-size: 11px; color: var(--muted); font-weight: 400; }
     .verdict { font-weight: 700; font-size: 16px; padding: 8px 12px; border-radius: 8px; margin-top: 12px; }
     .verdict-dig { background: var(--good-bg); color: var(--good); border: 1px solid #bbf7d0; }
     .verdict-pass { background: var(--bad-bg); color: var(--bad); border: 1px solid #fecaca; }
@@ -188,12 +209,32 @@
           </div>
           <div class="row2">
             <div class="field">
-              <label for="bb-sde-min">SDE minimum <span class="hint">(must match)</span></label>
+              <label for="bb-sde-min">SDE minimum <span class="hint">(must match, for SDE deals)</span></label>
               <input type="text" id="bb-sde-min" inputmode="decimal" />
             </div>
             <div class="field">
               <label for="bb-sde-max">SDE maximum</label>
               <input type="text" id="bb-sde-max" inputmode="decimal" />
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="bb-ebitda-min">EBITDA minimum <span class="hint">(must match, for EBITDA deals)</span></label>
+              <input type="text" id="bb-ebitda-min" inputmode="decimal" />
+            </div>
+            <div class="field">
+              <label for="bb-ebitda-max">EBITDA maximum</label>
+              <input type="text" id="bb-ebitda-max" inputmode="decimal" />
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="bb-sde-mult">Flag price / SDE above <span class="hint">(x)</span></label>
+              <input type="number" id="bb-sde-mult" min="0" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="bb-ebitda-mult">Flag price / EBITDA above <span class="hint">(x; usually higher than SDE)</span></label>
+              <input type="number" id="bb-ebitda-mult" min="0" step="0.1" />
             </div>
           </div>
           <div class="field">
@@ -260,19 +301,29 @@
               <label for="f-link">Listing link <span class="hint">(optional)</span></label>
               <input type="url" id="f-link" placeholder="https://" />
             </div>
+            <div class="field">
+              <span class="label">Earnings type</span>
+              <div class="seg">
+                <label><input type="radio" name="earningsType" value="SDE" checked /> SDE</label>
+                <label><input type="radio" name="earningsType" value="EBITDA" /> EBITDA</label>
+              </div>
+            </div>
             <div class="row3">
               <div class="field">
                 <label for="f-price">Asking price <span class="hint" id="price-hint"></span></label>
                 <input type="text" id="f-price" inputmode="decimal" placeholder="e.g., 2.4M" />
               </div>
               <div class="field">
-                <label for="f-sde">SDE</label>
-                <input type="text" id="f-sde" inputmode="decimal" placeholder="e.g., 750K" />
+                <label for="f-earnings" id="earnings-label">SDE</label>
+                <input type="text" id="f-earnings" inputmode="decimal" placeholder="e.g., 750K" />
               </div>
               <div class="field">
                 <label for="f-revenue">Revenue</label>
                 <input type="text" id="f-revenue" inputmode="decimal" placeholder="e.g., 3.9M" />
               </div>
+            </div>
+            <div class="field" id="replace-owner-row" hidden>
+              <div class="checks"><label><input type="checkbox" id="f-replace-owner" /> I'll replace the owner and EBITDA doesn't cover a manager (subtract my salary)</label></div>
             </div>
             <div class="row2">
               <div class="field">
@@ -292,16 +343,34 @@
 
           <aside class="screen-panel">
             <h3>Instant screen</h3>
-            <div class="assumptions">
-              <div class="field">
-                <label for="a-rate">SBA loan rate (%)</label>
-                <input type="number" id="a-rate" step="0.25" min="0" />
-              </div>
-              <div class="field">
-                <label for="a-salary">Your salary ($/yr)</label>
-                <input type="text" id="a-salary" inputmode="decimal" />
-              </div>
+            <div class="field">
+              <label for="a-salary">Your salary ($/yr) <span class="hint">(used for DSCR on every deal)</span></label>
+              <input type="text" id="a-salary" inputmode="decimal" />
             </div>
+            <h4>Financing <span class="est-badge">saved with this deal</span></h4>
+            <div class="fin-inputs">
+              <span class="hdr">Source</span><span class="hdr">% of price</span><span class="hdr">Rate %</span><span class="hdr">Term yrs</span>
+
+              <span class="src">SBA 7(a) loan</span>
+              <input type="number" id="fin-sba-pct" min="0" max="100" step="1" aria-label="SBA loan, percent of price" />
+              <input type="number" id="fin-sba-rate" min="0" step="0.25" aria-label="SBA loan interest rate" />
+              <input type="number" id="fin-sba-term" min="1" step="1" aria-label="SBA loan term in years" />
+
+              <span class="src">Seller note</span>
+              <input type="number" id="fin-sn-pct" min="0" max="100" step="1" aria-label="Seller note, percent of price" />
+              <input type="number" id="fin-sn-rate" min="0" step="0.25" aria-label="Seller note interest rate" />
+              <input type="number" id="fin-sn-term" min="1" step="1" aria-label="Seller note term in years" />
+              <label class="standby"><input type="checkbox" id="fin-sn-standby" /> Seller note on standby (no payments in the early years)</label>
+
+              <span class="src">Buyer equity <span class="sub">your cash</span></span>
+              <input type="number" id="fin-buyer-pct" min="0" max="100" step="1" aria-label="Buyer equity, percent of price" />
+              <span class="na">–</span><span class="na">–</span>
+
+              <span class="src">Outside investors</span>
+              <input type="number" id="fin-inv-pct" min="0" max="100" step="1" aria-label="Outside investor equity, percent of price" />
+              <span class="na">–</span><span class="na">–</span>
+            </div>
+            <div class="pct-total" id="pct-total"></div>
             <div id="screen"></div>
 
             <div class="save-box">
@@ -357,15 +426,22 @@
       states: ["CT", "ME", "MA", "NH", "RI", "VT", "NJ", "NY", "PA"], // Northeast US
       sdeMin: 500000,
       sdeMax: 1000000,
+      ebitdaMin: 400000,  // roughly the SDE range minus a manager's pay
+      ebitdaMax: 900000,
+      sdeHighMultiple: 4.5,    // flag asking prices above this multiple of SDE
+      ebitdaHighMultiple: 5.5, // EBITDA multiples typically run higher
       preferRetiring: true,
       growth: ["Flat", "Slow growth"] // "slow / steady"
     };
-    const DEFAULT_ASSUMPTIONS = { rate: 10.5, salary: 100000 };
+    const DEFAULT_ASSUMPTIONS = { salary: 100000 };
+    // Common structure: 80% SBA, 10% seller note, 10% buyer equity. All % are of purchase price.
+    const DEFAULT_FINANCING = {
+      sbaPct: 80, sbaRate: 10.5, sbaTerm: 10,
+      sellerPct: 10, sellerRate: 7, sellerTerm: 5, sellerStandby: false,
+      buyerPct: 10, investorPct: 0
+    };
 
-    const DOWN_PAYMENT = 0.10;  // SBA 7(a): 10% down
-    const TERM_YEARS = 10;      // 10-year term
     const TARGET_DSCR = 1.25;   // coverage lenders commonly look for
-    const HIGH_MULTIPLE = 4.5;  // flag asking prices above this multiple of SDE
 
     const DEAL_KEY = "searchdesk.deals.v1";
     const BB_KEY = "searchdesk.buybox.v1";
@@ -418,42 +494,81 @@
       const r = ratePct / 100 / 12, n = years * 12;
       return r === 0 ? principal / n : principal * r / (1 - Math.pow(1 + r, -n));
     }
-    function loanFromPayment(payment, ratePct, years) {
-      const r = ratePct / 100 / 12, n = years * 12;
-      return r === 0 ? payment * n : payment * (1 - Math.pow(1 + r, -n)) / r;
+    function annualPayment(principal, ratePct, years) {
+      return years > 0 ? monthlyPayment(principal, ratePct, years) * 12 : 0;
+    }
+    // Deals saved before financing existed fall back to the default structure.
+    function getFinancing(deal) {
+      return Object.assign({}, DEFAULT_FINANCING, deal.financing || {});
+    }
+
+    // Earnings type and amount. Deals saved before EBITDA support only have `sde`.
+    function earningsOf(deal) {
+      const type = deal.earningsType === "EBITDA" ? "EBITDA" : "SDE";
+      const amount = deal.earnings != null ? deal.earnings : (deal.sde != null ? deal.sde : null);
+      return { type, amount };
+    }
+    function sizeRange(type, bb) {
+      return type === "EBITDA" ? { min: bb.ebitdaMin, max: bb.ebitdaMax } : { min: bb.sdeMin, max: bb.sdeMax };
+    }
+    function highMultiple(type, bb) {
+      return type === "EBITDA" ? bb.ebitdaHighMultiple : bb.sdeHighMultiple;
     }
 
     function financialRead(deal, a) {
-      const out = {};
-      const sde = deal.sde, price = deal.askingPrice;
-      if (sde != null) out.cashForDebt = sde - a.salary;
+      const f = getFinancing(deal);
+      const out = { financing: f };
+      const e = earningsOf(deal);
+      const sde = e.amount, price = deal.askingPrice; // `sde` = earnings of either type below
+      out.earningsType = e.type;
+      out.earnings = e.amount;
+      // SDE includes the owner's pay, so subtract the buyer's salary. EBITDA usually already
+      // reflects a manager's pay, so only subtract it if the buyer says it doesn't.
+      out.salaryApplied = e.type === "SDE" || !!deal.replaceOwner;
+      out.pctTotal = f.sbaPct + f.sellerPct + f.buyerPct + f.investorPct;
+      if (sde != null) out.cashForDebt = sde - (out.salaryApplied ? a.salary : 0);
       if (sde != null && deal.revenue) out.margin = sde / deal.revenue;
       if (price && sde > 0) out.multiple = price / sde;
+
+      // Annual loan payment for every $1 of purchase price
+      const sbaPerDollar = f.sbaPct / 100 * annualPayment(1, f.sbaRate, f.sbaTerm);
+      const sellerPerDollar = f.sellerPct / 100 * annualPayment(1, f.sellerRate, f.sellerTerm);
+      const servicedPerDollar = sbaPerDollar + (f.sellerStandby ? 0 : sellerPerDollar);
+
       if (price) {
-        out.downPayment = price * DOWN_PAYMENT;
-        out.loan = price - out.downPayment;
-        out.monthly = monthlyPayment(out.loan, a.rate, TERM_YEARS);
-        out.annualDebt = out.monthly * 12;
-        if (sde != null) out.dscr = out.cashForDebt / out.annualDebt;
+        out.sources = [
+          { key: "sba", label: "SBA 7(a) loan", pct: f.sbaPct },
+          { key: "seller", label: "Seller note", pct: f.sellerPct },
+          { key: "buyer", label: "Buyer equity", pct: f.buyerPct },
+          { key: "investor", label: "Outside investors", pct: f.investorPct }
+        ].map(s => Object.assign(s, { amount: price * s.pct / 100 }));
+        out.sbaAnnual = price * sbaPerDollar;
+        out.sellerAnnual = price * sellerPerDollar;
+        out.annualDebt = price * servicedPerDollar; // excludes seller note when on standby
+        out.buyerCash = price * f.buyerPct / 100;
+        if (sde != null && out.annualDebt > 0) out.dscr = out.cashForDebt / out.annualDebt;
+        if (sde != null && f.sellerStandby && out.sellerAnnual > 0) {
+          out.dscrAfterStandby = out.cashForDebt / (out.sbaAnnual + out.sellerAnnual);
+        }
       }
-      // Highest price that keeps DSCR at the target, with 10% down.
-      if (sde != null && out.cashForDebt > 0) {
-        const maxMonthly = out.cashForDebt / TARGET_DSCR / 12;
-        out.maxPrice = loanFromPayment(maxMonthly, a.rate, TERM_YEARS) / (1 - DOWN_PAYMENT);
+      // Highest price that keeps DSCR at the target with this financing structure.
+      if (sde != null && out.cashForDebt > 0 && servicedPerDollar > 0) {
+        out.maxPrice = out.cashForDebt / TARGET_DSCR / servicedPerDollar;
       }
       return out;
     }
 
     function buyBoxChecks(deal, bb) {
       const status = (known, ok) => !known ? "unknown" : ok ? "pass" : "fail";
+      const e = earningsOf(deal), range = sizeRange(e.type, bb);
       return [
         { key: "industry", label: "Industry", must: true,
           status: status(!!deal.industry, bb.industries.includes(deal.industry)), detail: deal.industry || "Not entered" },
         { key: "location", label: "Location", must: true,
           status: status(!!deal.state, bb.states.includes(deal.state)), detail: deal.state || "Not entered" },
-        { key: "size", label: "Size (SDE)", must: true,
-          status: status(deal.sde != null, deal.sde >= bb.sdeMin && deal.sde <= bb.sdeMax),
-          detail: deal.sde != null ? moneyShort(deal.sde) : "Not entered" },
+        { key: "size", label: `Size (${e.type})`, must: true,
+          status: status(e.amount != null, e.amount >= range.min && e.amount <= range.max),
+          detail: e.amount != null ? moneyShort(e.amount) : "Not entered" },
         { key: "seller", label: "Seller situation", must: false,
           status: !bb.preferRetiring ? "pass" : status(!!deal.saleReason, deal.saleReason === "Retiring"),
           detail: !bb.preferRetiring ? "No preference" : (deal.saleReason || "Not entered") },
@@ -468,7 +583,7 @@
       const fin = financialRead(deal, a);
       const fitCount = checks.filter(c => c.status === "pass").length;
       if (checks.some(c => c.must && c.status === "unknown")) {
-        return { checks, fin, fitCount, verdict: null, reasons: ["Enter industry, state, and SDE to get a suggested verdict."] };
+        return { checks, fin, fitCount, verdict: null, reasons: ["Enter industry, state, and earnings (SDE or EBITDA) to get a suggested verdict."] };
       }
 
       const neg = [], pos = [];
@@ -480,26 +595,33 @@
       if (byKey("location").status === "fail") { pass = true; neg.push(`It's in ${deal.state}, outside your target states.`); }
       if (byKey("size").status === "fail") {
         pass = true;
-        neg.push(`SDE of ${moneyShort(deal.sde)} is ${deal.sde < bb.sdeMin ? "below" : "above"} your ${moneyShort(bb.sdeMin)}–${moneyShort(bb.sdeMax)} range.`);
+        const type = fin.earningsType, range = sizeRange(type, bb);
+        neg.push(`${type} of ${moneyShort(fin.earnings)} is ${fin.earnings < range.min ? "below" : "above"} your ${moneyShort(range.min)}–${moneyShort(range.max)} ${type} range.`);
       }
       if (!pass) pos.push("Fits your industry, location, and size targets.");
 
       // Financing
+      const cf = fin.salaryApplied ? "cash flow after your salary" : `${fin.earningsType} (no salary deducted)`;
+      const Cf = cf.charAt(0).toUpperCase() + cf.slice(1);
       if (fin.cashForDebt != null && fin.cashForDebt <= 0) {
         pass = true;
-        neg.push(`SDE doesn't leave anything for loan payments after your ${moneyShort(a.salary)} salary.`);
+        neg.push(`${fin.earningsType} doesn't leave anything for loan payments${fin.salaryApplied ? ` after your ${moneyShort(a.salary)} salary` : ""}.`);
       } else if (fin.dscr != null) {
         if (fin.dscr < TARGET_DSCR) {
           pass = true;
-          neg.push(`At the asking price, cash flow after your salary covers estimated loan payments only ${fin.dscr.toFixed(2)}x, below the ~${TARGET_DSCR}x lenders usually look for.`);
+          neg.push(`At the asking price, ${cf} covers estimated debt service only ${fin.dscr.toFixed(2)}x, below the ~${TARGET_DSCR}x lenders usually look for.`);
         } else {
-          pos.push(`Cash flow after your salary covers estimated loan payments ${fin.dscr.toFixed(2)}x (lenders usually look for ~${TARGET_DSCR}x).`);
+          pos.push(`${Cf} covers estimated debt service ${fin.dscr.toFixed(2)}x (lenders usually look for ~${TARGET_DSCR}x).`);
+          if (fin.dscrAfterStandby != null && fin.dscrAfterStandby < TARGET_DSCR) {
+            neg.push(`Once seller note payments start, coverage drops to ${fin.dscrAfterStandby.toFixed(2)}x.`);
+          }
         }
       } else if (fin.maxPrice) {
         pos.push(`No asking price yet. To keep loan coverage at ${TARGET_DSCR}x, the price would need to be about ${moneyShort(fin.maxPrice)} or less.`);
       }
-      if (fin.multiple != null && fin.multiple > HIGH_MULTIPLE) {
-        neg.push(`Asking ${fin.multiple.toFixed(1)}x SDE is on the high side for a business this size.`);
+      const limit = highMultiple(fin.earningsType, bb);
+      if (fin.multiple != null && fin.multiple > limit) {
+        neg.push(`Asking ${fin.multiple.toFixed(1)}x ${fin.earningsType} is above your ${limit}x flag for ${fin.earningsType} multiples.`);
       }
 
       // Growth
@@ -526,28 +648,29 @@
     function sampleDeals() {
       return [
         {
-          id: "sample-1", sample: true, channel: "Broker", name: "Harbor Line Commercial Cleaning",
+          id: "sample-1", sample: true, financing: Object.assign({}, DEFAULT_FINANCING), channel: "Broker", name: "Harbor Line Commercial Cleaning",
           industry: "Commercial services", description: "Commercial cleaning", state: "MA",
           contactName: "Dana Reyes", contactRole: "Broker", link: "",
-          askingPrice: 2400000, sde: 750000, revenue: 3900000, growth: "Slow growth", saleReason: "Retiring",
-          notes: "TEASER (fictional): Project Harbor. Established 1998 commercial cleaning company serving office parks, medical offices, and schools in eastern Massachusetts. About 85% recurring contract revenue, 120+ customers, none over 8% of revenue. Operations manager in place. Owner is retiring after 26 years and will support a 6-month transition.",
+          askingPrice: 2400000, earningsType: "EBITDA", earnings: 650000, replaceOwner: false,
+          revenue: 3900000, growth: "Slow growth", saleReason: "Retiring",
+          notes: "TEASER (fictional): Project Harbor. Established 1998 commercial cleaning company serving office parks, medical offices, and schools in eastern Massachusetts. About 85% recurring contract revenue, 120+ customers, none over 8% of revenue. Operations manager in place; EBITDA of about $650K already reflects the manager's pay. Owner is retiring after 26 years and will support a 6-month transition.",
           stage: "NDA signed", nextStep: "Review CIM financials and request 3 years of tax returns",
           dueDate: addDaysISO(-2), createdAt: addDaysISO(-9)
         },
         {
-          id: "sample-2", sample: true, channel: "Broker", name: "Sunbelt Pool & Patio Services",
+          id: "sample-2", sample: true, financing: Object.assign({}, DEFAULT_FINANCING), channel: "Broker", name: "Sunbelt Pool & Patio Services",
           industry: "Home services", description: "Residential pool service", state: "FL",
           contactName: "Marcus Hale", contactRole: "Broker", link: "",
-          askingPrice: 3800000, sde: 820000, revenue: 4100000, growth: "Fast growth", saleReason: "Other",
+          askingPrice: 3800000, earningsType: "SDE", earnings: 820000, revenue: 4100000, growth: "Fast growth", saleReason: "Other",
           notes: "TEASER (fictional): Fast-growing pool service and patio maintenance company in the Tampa area. Revenue up 35% last year on new residential routes. Owner is leaving to pursue another venture. Seller expects strong growth to continue.",
           stage: "Contacted / Teaser received", nextStep: "Send pass note to broker",
           dueDate: addDaysISO(0), createdAt: addDaysISO(-3)
         },
         {
-          id: "sample-3", sample: true, channel: "Direct outreach", name: "Keystone Fire & Safety Inspections",
+          id: "sample-3", sample: true, financing: Object.assign({}, DEFAULT_FINANCING), channel: "Direct outreach", name: "Keystone Fire & Safety Inspections",
           industry: "B2B services", description: "Fire safety inspections", state: "PA",
           contactName: "Walt Brenner", contactRole: "Owner", link: "",
-          askingPrice: null, sde: 600000, revenue: 2200000, growth: "Flat", saleReason: "Retiring",
+          askingPrice: null, earningsType: "SDE", earnings: 600000, revenue: 2200000, growth: "Flat", saleReason: "Retiring",
           notes: "Direct outreach (fictional). Found via a state fire marshal contractor list. Owner (68) founded the business in 1991; inspects extinguishers, sprinklers, and alarms for ~900 commercial accounts in central PA. Said he's 'thinking about the next chapter.' Revenue and SDE are his rough numbers from the first call; need to verify.",
           stage: "Owner call", nextStep: "Intro call: ask about revenue trend and key employees",
           dueDate: addDaysISO(3), createdAt: addDaysISO(-5)
@@ -578,6 +701,10 @@
       $("bb-states").value = buyBox.states.join(", ");
       $("bb-sde-min").value = money(buyBox.sdeMin);
       $("bb-sde-max").value = money(buyBox.sdeMax);
+      $("bb-ebitda-min").value = money(buyBox.ebitdaMin);
+      $("bb-ebitda-max").value = money(buyBox.ebitdaMax);
+      $("bb-sde-mult").value = buyBox.sdeHighMultiple;
+      $("bb-ebitda-mult").value = buyBox.ebitdaHighMultiple;
       $("bb-retiring").checked = buyBox.preferRetiring;
       $("bb-states-note").textContent = "";
       renderBuyBoxSummary();
@@ -587,7 +714,7 @@
       const parts = [
         buyBox.industries.join(", ") || "No industries",
         buyBox.states.length + " states",
-        `SDE ${moneyShort(buyBox.sdeMin)}–${moneyShort(buyBox.sdeMax)}`,
+        `SDE ${moneyShort(buyBox.sdeMin)}–${moneyShort(buyBox.sdeMax)} or EBITDA ${moneyShort(buyBox.ebitdaMin)}–${moneyShort(buyBox.ebitdaMax)}`,
         buyBox.preferRetiring ? "retiring owner preferred" : null,
         buyBox.growth.length ? buyBox.growth.join(" / ").toLowerCase() : null
       ].filter(Boolean);
@@ -599,13 +726,18 @@
       const tokens = $("bb-states").value.toUpperCase().split(/[^A-Z]+/).filter(Boolean);
       const unknown = tokens.filter(t => !STATES.includes(t));
       $("bb-states-note").textContent = unknown.length ? "Not recognized: " + unknown.join(", ") : "";
-      const min = num(parseMoney($("bb-sde-min").value));
-      const max = num(parseMoney($("bb-sde-max").value));
+      // Keep the previous value if a box is empty or not a number
+      const moneyOr = (id, prev) => { const v = num(parseMoney($(id).value)); return v != null ? v : prev; };
+      const multOr = (id, prev) => { const v = parseFloat($(id).value); return Number.isFinite(v) && v > 0 ? v : prev; };
       buyBox = {
         industries: checked("#bb-industries"),
         states: [...new Set(tokens.filter(t => STATES.includes(t)))],
-        sdeMin: min != null ? min : buyBox.sdeMin,
-        sdeMax: max != null ? max : buyBox.sdeMax,
+        sdeMin: moneyOr("bb-sde-min", buyBox.sdeMin),
+        sdeMax: moneyOr("bb-sde-max", buyBox.sdeMax),
+        ebitdaMin: moneyOr("bb-ebitda-min", buyBox.ebitdaMin),
+        ebitdaMax: moneyOr("bb-ebitda-max", buyBox.ebitdaMax),
+        sdeHighMultiple: multOr("bb-sde-mult", buyBox.sdeHighMultiple),
+        ebitdaHighMultiple: multOr("bb-ebitda-mult", buyBox.ebitdaHighMultiple),
         preferRetiring: $("bb-retiring").checked,
         growth: checked("#bb-growth")
       };
@@ -626,15 +758,53 @@
         channel: document.querySelector('input[name="channel"]:checked').value,
         name: v("f-name"), industry: v("f-industry"), description: v("f-desc"), state: v("f-state"),
         contactName: v("f-contact"), contactRole: v("f-role"), link: v("f-link"),
-        askingPrice: num(parseMoney(v("f-price"))), sde: num(parseMoney(v("f-sde"))), revenue: num(parseMoney(v("f-revenue"))),
+        askingPrice: num(parseMoney(v("f-price"))), revenue: num(parseMoney(v("f-revenue"))),
+        earningsType: document.querySelector('input[name="earningsType"]:checked').value,
+        earnings: num(parseMoney(v("f-earnings"))),
+        replaceOwner: $("f-replace-owner").checked,
         growth: v("f-growth"), saleReason: v("f-reason"), notes: $("f-notes").value,
-        stage: v("f-stage"), nextStep: v("f-next"), dueDate: v("f-due")
+        stage: v("f-stage"), nextStep: v("f-next"), dueDate: v("f-due"),
+        financing: readFinancing()
       };
     }
+
+    function readFinancing() {
+      const D = DEFAULT_FINANCING;
+      const pct = id => { const v = parseFloat($(id).value); return Number.isFinite(v) && v >= 0 ? v : 0; };
+      const rate = (id, fb) => { const v = parseFloat($(id).value); return Number.isFinite(v) && v >= 0 ? v : fb; };
+      const term = (id, fb) => { const v = parseFloat($(id).value); return Number.isFinite(v) && v > 0 ? v : fb; };
+      return {
+        sbaPct: pct("fin-sba-pct"), sbaRate: rate("fin-sba-rate", D.sbaRate), sbaTerm: term("fin-sba-term", D.sbaTerm),
+        sellerPct: pct("fin-sn-pct"), sellerRate: rate("fin-sn-rate", D.sellerRate), sellerTerm: term("fin-sn-term", D.sellerTerm),
+        sellerStandby: $("fin-sn-standby").checked,
+        buyerPct: pct("fin-buyer-pct"), investorPct: pct("fin-inv-pct")
+      };
+    }
+
+    function setFinancingInputs(f) {
+      $("fin-sba-pct").value = f.sbaPct;
+      $("fin-sba-rate").value = f.sbaRate;
+      $("fin-sba-term").value = f.sbaTerm;
+      $("fin-sn-pct").value = f.sellerPct;
+      $("fin-sn-rate").value = f.sellerRate;
+      $("fin-sn-term").value = f.sellerTerm;
+      $("fin-sn-standby").checked = !!f.sellerStandby;
+      $("fin-buyer-pct").value = f.buyerPct;
+      $("fin-inv-pct").value = f.investorPct;
+    }
+
+    function pctOff(total) { return Math.abs(total - 100) > 0.01; }
 
     function updateChannelUI() {
       const direct = document.querySelector('input[name="channel"]:checked').value === "Direct outreach";
       $("price-hint").textContent = direct ? "(optional)" : "(required)";
+    }
+
+    function updateEarningsUI() {
+      const type = document.querySelector('input[name="earningsType"]:checked').value;
+      $("earnings-label").textContent = type;
+      $("f-earnings").placeholder = type === "EBITDA" ? "e.g., 650K" : "e.g., 750K";
+      $("replace-owner-row").hidden = type !== "EBITDA";
     }
 
     function renderScreen() {
@@ -649,27 +819,67 @@
         `<li class="${c.status}"><span><span class="mark">${marks[c.status]}</span>${c.label}${c.must ? "" : ' <span class="tag-pref">preference</span>'}</span><span class="detail">${escapeHtml(c.detail)}</span></li>`
       ).join("") + "</ul>";
 
+      const fz = f.financing;
+      const dl = rows => `<dl class="fin">${rows.map(r => `<dt>${escapeHtml(r[0])}</dt><dd>${escapeHtml(r[1])}</dd>`).join("")}</dl>`;
+
+      // Financing total check
+      const totalEl = $("pct-total");
+      if (pctOff(f.pctTotal)) {
+        totalEl.textContent = `Financing adds up to ${+f.pctTotal.toFixed(2)}%. It needs to total 100% (numbers below will be off).`;
+        totalEl.className = "pct-total bad";
+      } else {
+        totalEl.textContent = "Total: 100% of purchase price.";
+        totalEl.className = "pct-total";
+      }
+
       let finHtml = `<h4>Quick financial read <span class="est-badge">rough estimates</span></h4>`;
       if (f.cashForDebt == null) {
-        finHtml += `<p class="meta">Enter SDE to see the financial read.</p>`;
+        finHtml += `<p class="meta">Enter earnings (SDE or EBITDA) to see the financial read.</p>`;
       } else {
-        const rows = [];
-        if (f.multiple != null) rows.push(["Price / SDE multiple", f.multiple.toFixed(1) + "x"]);
-        if (f.margin != null) rows.push(["SDE margin", Math.round(f.margin * 100) + "%"]);
-        if (f.loan != null) {
-          rows.push(["Down payment (10%)", money(f.downPayment)]);
-          rows.push([`SBA 7(a) loan (90%, ${TERM_YEARS} yr, ${assumptions.rate}%)`, money(f.loan)]);
-          rows.push(["Est. monthly loan payment", money(f.monthly)]);
-          rows.push(["Est. annual debt service", money(f.annualDebt)]);
+        const top = [];
+        if (f.multiple != null) top.push([`Price / ${f.earningsType} multiple`, f.multiple.toFixed(1) + "x"]);
+        if (f.margin != null) top.push([`${f.earningsType} margin`, Math.round(f.margin * 100) + "%"]);
+        if (top.length) finHtml += dl(top);
+
+        if (f.sources) {
+          // Sources-of-funds bar + table
+          const bar = f.pctTotal > 0 ? f.sources.filter(s => s.pct > 0).map(s =>
+            `<span class="src-${s.key}" style="width:${(s.pct / f.pctTotal * 100).toFixed(2)}%" title="${escapeHtml(s.label)}: ${s.pct}%"></span>`).join("") : "";
+          const loanNote = { sba: `${fz.sbaRate}%, ${fz.sbaTerm} yr`, seller: `${fz.sellerRate}%, ${fz.sellerTerm} yr${fz.sellerStandby ? ", standby" : ""}` };
+          const payment = {
+            sba: money(f.sbaAnnual),
+            seller: fz.sellerStandby && f.sellerAnnual > 0 ? "Standby" : money(f.sellerAnnual),
+            buyer: "–", investor: "–"
+          };
+          const body = f.sources.map(s => `<tr>
+              <td><span class="dot src-${s.key}"></span>${escapeHtml(s.label)}${loanNote[s.key] ? `<span class="sub">${escapeHtml(loanNote[s.key])}</span>` : ""}</td>
+              <td>${s.pct}%</td><td>${money(s.amount)}</td><td>${payment[s.key]}</td></tr>`).join("");
+          const totalAmount = f.sources.reduce((sum, s) => sum + s.amount, 0);
+          finHtml += `<div class="stack-bar" role="img" aria-label="Sources of funds">${bar}</div>
+            <div class="table-wrap"><table class="sources">
+              <thead><tr><th>Source</th><th>%</th><th>Amount</th><th>Annual pmt</th></tr></thead>
+              <tbody>${body}</tbody>
+              <tfoot><tr><td>Total</td><td>${+f.pctTotal.toFixed(2)}%</td><td>${money(totalAmount)}</td><td>${money(f.annualDebt)}</td></tr></tfoot>
+            </table></div>`;
         } else {
-          rows.push(["Asking price", "Not provided"]);
+          finHtml += `<p class="meta">Add an asking price to see sources of funds and loan payments.</p>`;
         }
-        rows.push([`Cash flow after ${moneyShort(assumptions.salary)} salary`, money(f.cashForDebt)]);
+
+        const rows = [];
+        if (f.annualDebt != null) rows.push([`Total annual debt service${fz.sellerStandby && f.sellerAnnual > 0 ? " (seller note excluded while on standby)" : ""}`, money(f.annualDebt)]);
+        rows.push([f.salaryApplied
+          ? `Cash flow after ${moneyShort(assumptions.salary)} salary (${f.earningsType} − salary)`
+          : "Cash flow for debt (EBITDA, no salary deducted)", money(f.cashForDebt)]);
         if (f.dscr != null) rows.push(["Est. DSCR (debt coverage)", f.dscr.toFixed(2) + "x"]);
-        if (f.maxPrice) rows.push([`Max price at ${TARGET_DSCR}x DSCR`, money(f.maxPrice)]);
-        finHtml += `<dl class="fin">${rows.map(r => `<dt>${escapeHtml(r[0])}</dt><dd>${escapeHtml(r[1])}</dd>`).join("")}</dl>`;
+        if (f.dscrAfterStandby != null) rows.push(["Est. DSCR once seller note payments start", f.dscrAfterStandby.toFixed(2) + "x"]);
+        if (f.buyerCash != null) rows.push(["Cash you put in (buyer equity)", money(f.buyerCash)]);
+        if (f.maxPrice) rows.push([`Max price at ${TARGET_DSCR}x DSCR (this structure)`, money(f.maxPrice)]);
+        finHtml += dl(rows);
       }
-      finHtml += `<p class="disclaimer">Rough estimates for screening only, not financial or investment advice. Ignores taxes, capex, working capital, seller notes, fees, and SBA guarantee costs.</p>`;
+      if (fz.buyerPct + fz.investorPct < 10) {
+        finHtml += `<p class="disclaimer">Note: SBA lenders usually want at least ~10% equity going in. A seller note on full standby can sometimes count toward it.</p>`;
+      }
+      finHtml += `<p class="disclaimer">Rough estimates for screening only, not financial or investment advice. Ignores taxes, capex, working capital, fees, closing costs, and SBA guarantee fees.</p>`;
 
       $("screen").innerHTML = verdictHtml + reasons + checklist + finHtml;
     }
@@ -687,12 +897,15 @@
       if (!d.name) missing.push("business name");
       if (!d.industry) missing.push("industry");
       if (!d.state) missing.push("state");
-      if (d.sde == null) missing.push("SDE");
+      if (d.earnings == null) missing.push(d.earningsType);
       if (d.channel === "Broker" && d.askingPrice == null) missing.push("asking price (required for broker deals)");
-      [["f-price", "asking price"], ["f-sde", "SDE"], ["f-revenue", "revenue"]].forEach(([id, label]) => {
+      [["f-price", "asking price"], ["f-earnings", d.earningsType], ["f-revenue", "revenue"]].forEach(([id, label]) => {
         if (Number.isNaN(parseMoney($(id).value))) missing.push(`a number for ${label} (like 750000 or 750K)`);
       });
       if (d.link && !/^https?:\/\//i.test(d.link)) missing.push("a listing link starting with http:// or https://");
+      const fz = d.financing;
+      const total = fz.sbaPct + fz.sellerPct + fz.buyerPct + fz.investorPct;
+      if (pctOff(total)) missing.push(`financing percentages that add up to 100% (now ${+total.toFixed(2)}%)`);
       if (missing.length) { showMsg("Please add: " + missing.join(", ") + ".", "error"); return; }
 
       if (editingId) {
@@ -718,7 +931,10 @@
       $("f-role").value = d.contactRole || "Broker";
       $("f-link").value = d.link || "";
       $("f-price").value = d.askingPrice != null ? money(d.askingPrice) : "";
-      $("f-sde").value = d.sde != null ? money(d.sde) : "";
+      const e = earningsOf(d);
+      document.querySelectorAll('input[name="earningsType"]').forEach(r => { r.checked = r.value === e.type; });
+      $("f-earnings").value = e.amount != null ? money(e.amount) : "";
+      $("f-replace-owner").checked = !!d.replaceOwner;
       $("f-revenue").value = d.revenue != null ? money(d.revenue) : "";
       $("f-growth").value = d.growth || "";
       $("f-reason").value = d.saleReason || "";
@@ -726,6 +942,7 @@
       $("f-stage").value = d.stage || "Sourced";
       $("f-next").value = d.nextStep || "";
       $("f-due").value = d.dueDate || "";
+      setFinancingInputs(getFinancing(d));
     }
 
     function startEdit(id) {
@@ -738,6 +955,7 @@
       $("cancel-btn").hidden = false;
       showMsg("", "");
       updateChannelUI();
+      updateEarningsUI();
       renderScreen();
       $("add").scrollIntoView({ behavior: "smooth" });
     }
@@ -749,11 +967,12 @@
       $("save-btn").textContent = "Save to pipeline";
       $("cancel-btn").hidden = true;
       $("f-role").value = "Broker";
-      // form.reset() also clears the assumption inputs, so put them back
-      $("a-rate").value = assumptions.rate;
+      // form.reset() also clears salary and financing, so put them back
       $("a-salary").value = money(assumptions.salary);
+      setFinancingInputs(DEFAULT_FINANCING);
       showMsg("", "");
       updateChannelUI();
+      updateEarningsUI();
       renderScreen();
     }
 
@@ -791,7 +1010,8 @@
           <div class="card-row">
             <span class="chip fit">Buy box fit ${s.fitCount}/5</span>
             ${s.verdict ? `<span class="chip ${s.verdict === "Pass" ? "pass" : "dig"}">${s.verdict}</span>` : ""}
-            ${s.fin.multiple != null ? `<span class="meta">${s.fin.multiple.toFixed(1)}x SDE</span>` : ""}
+            ${s.fin.earnings != null ? `<span class="meta">${s.fin.earningsType} ${moneyShort(s.fin.earnings)}</span>` : ""}
+            ${s.fin.multiple != null ? `<span class="meta">${s.fin.multiple.toFixed(1)}x ${s.fin.earningsType}</span>` : ""}
             ${s.fin.dscr != null ? `<span class="meta">DSCR ${s.fin.dscr.toFixed(2)}x</span>` : ""}
           </div>
           <div class="next ${due}"><strong>Next:</strong> ${escapeHtml(d.nextStep || "No next step set")}${dueText}</div>
@@ -825,7 +1045,8 @@
     // ----- Wiring -----
     function init() {
       buyBox = Object.assign({}, DEFAULT_BUYBOX, load(BB_KEY, {}));
-      assumptions = Object.assign({}, DEFAULT_ASSUMPTIONS, load(ASSUME_KEY, {}));
+      const savedAssume = load(ASSUME_KEY, {});
+      assumptions = { salary: Number.isFinite(savedAssume.salary) ? savedAssume.salary : DEFAULT_ASSUMPTIONS.salary };
       const stored = load(DEAL_KEY, null);
       if (Array.isArray(stored)) {
         deals = stored;
@@ -839,8 +1060,8 @@
       fillSelect("f-growth", GROWTH, "Select…");
       fillSelect("f-reason", ["Retiring", "Other"], "Select…");
       fillSelect("f-stage", STAGES);
-      $("a-rate").value = assumptions.rate;
       $("a-salary").value = money(assumptions.salary);
+      setFinancingInputs(DEFAULT_FINANCING);
       renderBuyBoxEditor();
 
       // Buy box edits
@@ -862,21 +1083,18 @@
         $("f-role").value = r.value === "Direct outreach" ? "Owner" : "Broker";
         updateChannelUI();
       }));
+      document.querySelectorAll('input[name="earningsType"]').forEach(r => r.addEventListener("change", updateEarningsUI));
       form.addEventListener("submit", handleSave);
       $("cancel-btn").addEventListener("click", resetForm);
 
-      // Assumptions (rate, salary)
-      const onAssume = () => {
-        const rate = parseFloat($("a-rate").value);
+      // Salary is shared across deals (financing is saved per deal with the form)
+      $("a-salary").addEventListener("input", () => {
         const salary = num(parseMoney($("a-salary").value));
-        if (Number.isFinite(rate) && rate >= 0) assumptions.rate = rate;
         if (salary != null && salary >= 0) assumptions.salary = salary;
         store(ASSUME_KEY, assumptions);
         renderScreen();
         renderPipeline();
-      };
-      $("a-rate").addEventListener("input", onAssume);
-      $("a-salary").addEventListener("input", onAssume);
+      });
 
       // Pipeline actions
       $("board").addEventListener("change", e => {
@@ -908,6 +1126,7 @@
       });
 
       updateChannelUI();
+      updateEarningsUI();
       renderScreen();
       renderPipeline();
     }
