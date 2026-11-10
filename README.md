@@ -1,47 +1,43 @@
-# [Project Name]
+# SearchDesk
 
-> **One-line pitch:** [Who is this for, and what job does it do for them?]
+> **One-line pitch:** SearchDesk is the home base for first-time acquisition searchers: every deal, from brokers or direct outreach, captured, screened, and moved forward in one pipeline.
 
-- **Builder:** [Your Name] (`@github-handle`)
-- **Pod:** [Pod Name / Number]
-- **Product Page & Living PRD:** [Add your GitHub Pages URL]
-- **App:** runs locally through Week 4; add a cloud URL in Build 5.
+- **Builder:** Jordan Steinroeder (`@jns485-stern`)
+- **Pod:** To be added
+- **Product Page & Living PRD:** https://building-with-ai-f26.github.io/jns485-SearchDesk/
+- **App:** runs locally for now (see below). A cloud URL is coming in Build 5.
 
-## Start here: Build 1
+## What it does (Build 1 prototype)
 
-**Due Monday, November 9 at noon, New York time.** No class November 3; keep building that week.
+- Set your buy box once: target industries, states, SDE or EBITDA range, high-multiple flags, and seller situation.
+- Add a deal from a broker or from direct outreach, using SDE or EBITDA.
+- Get an instant screen: buy box checklist, price multiple, capital stack (SBA loan, seller note, buyer and investor equity), rough debt service and DSCR, and a suggested "Dig deeper" or "Pass" verdict with reasons. These are rough estimates, not advice.
+- Save the deal to a pipeline grouped by stage, with a dated next step. Overdue items are flagged.
 
-1. Join the [class organization](https://github.com/building-with-ai-f26), then use this template to create a **public** repo named `<netid>-<project-slug>`. Ask Christian or Hew if the organization is missing from the owner list.
-2. Set up Git and one coding agent during the week of October 27. Follow the [Icerynk setup guide](https://www.icerynk.com/c/fa26-tech-gb-2160-dm2-f2/content/pre-class-setup-github-openrouter-your-coding-agent).
-3. Publish [`docs/index.html`](./docs/index.html): **Settings → Pages → Deploy from a branch → main → /docs → Save**. When deployment finishes, open `https://building-with-ai-f26.github.io/<your-repo-name>/`.
-4. Fill in PRD v1: a reachable user, their painful before/after workflow, one core workflow, and three non-goals.
-5. Build a rough local prototype. Add a screenshot or GIF and an honest Build 1 log to the Product Page, including progress, learning, problems, costs, and hours.
-6. Push meaningful commits on **at least two separate days each week outside class**, including the November 3 break.
-7. Submit your **Product Page URL and repository URL in Icerynk**. Come ready to demo the prototype in two minutes on November 10.
+## Status
 
-Create your PostHog account in Week 1. Install it on the Product Page and local app in **Build 2**, then verify events. The Product Page is public from Build 1; the app can stay local through Week 4.
+- **Build 1 (due Nov 9):** Done. PRD v1, local prototype, and screenshots are on the Product Page.
+- **Builds 2–5:** Coming in Weeks 2–5. Progress is logged weekly on the Product Page.
 
 ## Repository map
 
 | File / folder | Purpose |
 | --- | --- |
-| [`docs/index.html`](./docs/index.html) | Required public pitch, living PRD, and weekly build log. Update with actual work and evidence. |
-| [`Intent.md`](./Intent.md), [`Plan.md`](./Plan.md), [`journal/`](./journal/) | Optional drafting aids. No duplicate submission is required. |
-| [`AGENTS.md`](./AGENTS.md) | Local run commands, project context, and agent rules. Build 2 onward. |
-| [`tests/`](./tests/) | Verification guidance. Build 4 offers Track A domain evals **or** Track B user replays. |
-| [`SPONSOR_MEMO.md`](./SPONSOR_MEMO.md) | One-page recommendation backed by actual usage, full costs, and risks. Due December 14 at noon. |
-
-[Icerynk](https://www.icerynk.com/c/fa26-tech-gb-2160-dm2-f2/content) holds the assignment instructions and submissions.
+| [`app/index.html`](./app/index.html) | The SearchDesk prototype: one web page with no libraries or API keys. |
+| [`docs/index.html`](./docs/index.html) | Public Product Page, living PRD, and weekly build log (published with GitHub Pages). |
+| [`docs/images/`](./docs/images/) | Prototype screenshots used on the Product Page. |
+| [`AGENTS.md`](./AGENTS.md) | Run commands and rules for the coding agent. |
+| [`Intent.md`](./Intent.md), [`Plan.md`](./Plan.md), [`journal/`](./journal/) | Optional drafting notes. |
+| [`tests/`](./tests/) | Verification guidance. Tests are coming in Build 4. |
+| [`SPONSOR_MEMO.md`](./SPONSOR_MEMO.md) | Final sponsor recommendation, due December 14. |
 
 ## Local setup
 
-Clone **your own repository** and ask your coding agent to document the exact install and run commands here and in `AGENTS.md`.
-
 ```bash
-git clone https://github.com/building-with-ai-f26/<your-repo-name>.git
-cd <your-repo-name>
+git clone https://github.com/building-with-ai-f26/jns485-SearchDesk.git
+cd jns485-SearchDesk
 ```
 
 **Run the SearchDesk prototype:** there's nothing to install. Open `app/index.html` in your browser (Windows: `start app/index.html`; Mac: `open app/index.html`). Deals are saved in that browser, and 3 fictional sample deals load the first time you open it.
 
-If your app needs API keys, use a local environment file such as `.env`. Keep private keys out of source code, browser code, screenshots, and commits. The template ignores `.env`; `.env.example` contains placeholders only.
+No API keys are needed yet. When a later build adds one, it will go in a local `.env` file (ignored by Git), with placeholder names only in `.env.example`.
