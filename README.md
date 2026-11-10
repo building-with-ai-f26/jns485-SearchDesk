@@ -13,6 +13,7 @@
 - Add a deal from a broker or from direct outreach, using SDE or EBITDA.
 - Get an instant screen: buy box checklist, price multiple, capital stack (SBA loan, seller note, buyer and investor equity), rough debt service and DSCR, and a suggested "Dig deeper" or "Pass" verdict with reasons. These are rough estimates, not advice.
 - Save the deal to a pipeline grouped by stage, with a dated next step. Overdue items are flagged.
+- Paste a teaser or upload a PDF, and Claude pre-fills the deal form (fields it filled are marked "AI" for you to check). Each run shows its tokens and estimated cost.
 
 ## Status
 
@@ -23,7 +24,9 @@
 
 | File / folder | Purpose |
 | --- | --- |
-| [`app/index.html`](./app/index.html) | The SearchDesk prototype: one web page with no libraries or API keys. |
+| [`app/index.html`](./app/index.html) | The SearchDesk prototype: one web page (no libraries). |
+| [`server.js`](./server.js) | Small local server: serves the app and handles AI teaser reading with Claude (key read from `.env`). |
+| [`test-data/`](./test-data/) | Fictional sample teasers (text and PDF) for trying AI teaser reading. |
 | [`docs/index.html`](./docs/index.html) | Public Product Page, living PRD, and weekly build log (published with GitHub Pages). |
 | [`docs/images/`](./docs/images/) | Prototype screenshots used on the Product Page. |
 | [`AGENTS.md`](./AGENTS.md) | Run commands and rules for the coding agent. |
@@ -38,6 +41,15 @@ git clone https://github.com/building-with-ai-f26/jns485-SearchDesk.git
 cd jns485-SearchDesk
 ```
 
-**Run the SearchDesk prototype:** there's nothing to install. Open `app/index.html` in your browser (Windows: `start app/index.html`; Mac: `open app/index.html`). Deals are saved in that browser, and 3 fictional sample deals load the first time you open it.
+**Run the SearchDesk prototype** (needs [Node.js](https://nodejs.org) 21.7 or newer):
 
-No API keys are needed yet. When a later build adds one, it will go in a local `.env` file (ignored by Git), with placeholder names only in `.env.example`.
+```bash
+npm install          # first time only
+npm start            # then open http://localhost:3000
+```
+
+Deals are saved in your browser, and 3 fictional sample deals load the first time you open it.
+
+**AI teaser reading:** copy `.env.example` to `.env` and replace `paste-your-key-here` with your Anthropic API key. `.env` is ignored by Git, and the key stays on the server: it is never sent to the browser. Paste a teaser (or upload a PDF) on the Add a deal screen and click **Read teaser**. Claude Haiku 5.5 fills in the fields it finds, marks them "AI", and leaves anything it can't find blank. Each run shows its token count and estimated cost (usually well under 1¢). Fictional teasers to try are in [`test-data/`](./test-data/).
+
+You can still open `app/index.html` directly without the server; everything works except AI teaser reading.

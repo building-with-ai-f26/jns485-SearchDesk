@@ -8,10 +8,11 @@
 - **Tech stack:** [e.g., Python 3.12 / FastAPI / Next.js / SQLite / OpenRouter API]
 
 ## 2. Commands
-- **Install dependencies:** None. The prototype is a single HTML file with no libraries or API keys.
-- **Run locally:** Open `app/index.html` in a browser (Windows: `start app/index.html`; Mac: `open app/index.html`). Data is saved in that browser's localStorage.
+- **Install dependencies:** `npm install` (Node 21.7+; one dependency, the official `@anthropic-ai/sdk`).
+- **API key:** put `ANTHROPIC_API_KEY=...` in `.env` (git-ignored; see `.env.example`). Only `server.js` reads it; it is never logged or sent to the browser.
+- **Run locally:** `npm start`, then open http://localhost:3000. AI teaser reading (`POST /api/extract`, Claude Haiku 5.5) only works this way. Opening `app/index.html` directly still works for everything except AI teaser reading. Deals are saved in the browser's localStorage.
 - **Run deterministic tests:** None yet. Check manually: add, edit, and delete a deal, then reopen the page to confirm it was saved.
-- **Run model evals:** None yet (no AI model in the prototype).
+- **Run model evals:** None yet. Manual check: read the teasers in `test-data/` and compare with the expected fields in `test-data/README.md` (each run costs well under 1¢).
 
 ## 3. Non-Negotiable Engineering Rules
 1. **Plan before coding:** Before touching multiple files, propose a brief plan and wait for approval.

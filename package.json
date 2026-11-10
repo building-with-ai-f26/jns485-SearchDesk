@@ -1,0 +1,16 @@
+{
+  "name": "searchdesk",
+  "version": "0.2.0",
+  "private": true,
+  "description": "SearchDesk local prototype: a deal pipeline for first-time acquisition searchers, with AI teaser reading.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=21.7"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0"
+  }
+}

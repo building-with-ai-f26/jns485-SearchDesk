@@ -164,6 +164,32 @@
     .form-msg.error { color: var(--bad); }
     .form-msg.ok { color: var(--good); }
 
+    /* AI teaser reading */
+    .teaser-box {
+      border: 1px dashed var(--good-border); background: var(--accent-soft); border-radius: var(--radius);
+      padding: 16px 18px; margin-bottom: 20px;
+    }
+    .teaser-box h3 { margin: 0; color: var(--accent-dark); }
+    .teaser-box textarea { min-height: 90px; margin-top: 10px; }
+    .teaser-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+    .teaser-actions .spacer { flex: 1; }
+    .file-btn { cursor: pointer; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .teaser-status { font-size: 13px; margin-top: 10px; }
+    .teaser-status:empty { display: none; }
+    .teaser-status.error { color: var(--bad); background: var(--bad-bg); border: 1px solid var(--bad-border); border-radius: 8px; padding: 8px 10px; }
+    .teaser-status.ok { color: var(--text); background: #fff; border: 1px solid var(--good-border); border-radius: 8px; padding: 8px 10px; }
+    .teaser-status .cost { display: block; color: var(--muted); margin-top: 4px; }
+    .ai-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; background: var(--accent); color: #fff; padding: 1px 6px; border-radius: 999px; vertical-align: middle; }
+    /* Fields the AI filled stay highlighted until you edit them */
+    .field.ai-filled input, .field.ai-filled select, .field.ai-filled textarea, .field.ai-filled .seg {
+      background: var(--accent-soft); border-color: var(--accent);
+    }
+    .field.ai-filled > label::after, .field.ai-filled > .label::after {
+      content: "AI"; margin-left: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+      background: var(--accent); color: #fff; padding: 1px 6px; border-radius: 999px; vertical-align: middle;
+    }
+
     /* Pipeline */
     .stage-group { margin-top: 18px; }
     .stage-group h3 { display: flex; align-items: center; gap: 8px; }
@@ -292,6 +318,24 @@
     <!-- 2. ADD A DEAL + INSTANT SCREEN -->
     <section id="add">
       <div class="section-head"><h2 id="form-title">2. Add a deal</h2><span class="meta">The screen on the right updates as you type.</span></div>
+
+      <!-- AI teaser reading: needs the local server (npm start) -->
+      <div class="teaser-box" id="teaser-box">
+        <div class="section-head" style="margin-bottom:0">
+          <h3>Paste a teaser <span class="ai-tag">AI</span></h3>
+          <span class="meta">Claude reads it and fills in the form below. Check every field before saving.</span>
+        </div>
+        <textarea id="t-text" placeholder="Paste the teaser text here, or upload a PDF teaser…" aria-label="Teaser text"></textarea>
+        <div class="teaser-actions">
+          <label class="btn btn-secondary btn-small file-btn">Upload PDF<input type="file" id="t-pdf" accept="application/pdf,.pdf" hidden /></label>
+          <span class="meta" id="t-file"></span>
+          <button type="button" class="btn-link" id="t-file-clear" hidden>Remove PDF</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn" id="t-read">Read teaser</button>
+        </div>
+        <div class="teaser-status" id="t-status" role="status"></div>
+      </div>
+
       <form id="deal-form" novalidate>
         <div class="add-grid">
           <div>
@@ -340,7 +384,7 @@
               <label for="f-link">Listing link <span class="hint">(optional)</span></label>
               <input type="url" id="f-link" placeholder="https://" />
             </div>
-            <div class="field">
+            <div class="field" id="earnings-type-field">
               <span class="label">Earnings type</span>
               <div class="seg">
                 <label><input type="radio" name="earningsType" value="SDE" checked /> SDE</label>
@@ -989,6 +1033,7 @@
       if (!d) return;
       editingId = id;
       setFormValues(d);
+      clearAiMarks();
       $("form-title").textContent = "2. Edit deal: " + d.name;
       $("save-btn").textContent = "Update deal";
       $("cancel-btn").hidden = false;
@@ -1006,6 +1051,11 @@
       $("save-btn").textContent = "Save to pipeline";
       $("cancel-btn").hidden = true;
       $("f-role").value = "Broker";
+      clearAiMarks();
+      // Clear the teaser box too, so the next deal starts fresh
+      $("t-text").value = "";
+      clearPdf();
+      if (location.protocol !== "file:") setTeaserStatus("", "");
       // form.reset() also clears salary and financing, so put them back
       $("a-salary").value = money(assumptions.salary);
       setFinancingInputs(DEFAULT_FINANCING);
@@ -1081,6 +1131,134 @@
       }).join("");
     }
 
+    // ----- AI teaser reading -----
+    // Sends the teaser to the local server (server.js), which calls Claude with the key from .env.
+    // Claude's answer only pre-fills the form; nothing is saved until you click Save.
+    const MAX_PDF_BYTES = 10 * 1024 * 1024;
+    let teaserPdf = null; // { name, data (base64) }
+
+    function setTeaserStatus(html, kind) {
+      const el = $("t-status");
+      el.className = "teaser-status" + (kind ? " " + kind : "");
+      el.innerHTML = html;
+    }
+
+    function clearAiMarks() {
+      document.querySelectorAll(".field.ai-filled").forEach(el => el.classList.remove("ai-filled"));
+    }
+    function markAi(id) {
+      const field = $(id).closest(".field");
+      if (field) field.classList.add("ai-filled");
+    }
+
+    function formatUsd(usd) {
+      if (usd >= 0.01) return "$" + usd.toFixed(2);
+      return "$" + usd.toFixed(5) + " (less than 1¢)";
+    }
+
+    function onPdfChosen() {
+      const file = $("t-pdf").files[0];
+      teaserPdf = null;
+      $("t-file").textContent = "";
+      $("t-file-clear").hidden = true;
+      if (!file) return;
+      const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+      if (!isPdf) { $("t-pdf").value = ""; return setTeaserStatus("That file isn't a PDF. Choose a .pdf teaser, or paste the text instead.", "error"); }
+      if (file.size > MAX_PDF_BYTES) { $("t-pdf").value = ""; return setTeaserStatus("That PDF is larger than 10 MB. Paste the teaser text instead.", "error"); }
+      const reader = new FileReader();
+      reader.onload = () => {
+        teaserPdf = { name: file.name, data: String(reader.result).split(",")[1] || "" };
+        $("t-file").textContent = "PDF: " + file.name;
+        $("t-file-clear").hidden = false;
+        setTeaserStatus("", "");
+      };
+      reader.onerror = () => setTeaserStatus("Couldn't open that file. Try again, or paste the teaser text instead.", "error");
+      reader.readAsDataURL(file);
+    }
+
+    function clearPdf() {
+      teaserPdf = null;
+      $("t-pdf").value = "";
+      $("t-file").textContent = "";
+      $("t-file-clear").hidden = true;
+    }
+
+    async function readTeaser() {
+      const text = $("t-text").value.trim();
+      if (!text && !teaserPdf) return setTeaserStatus("Paste teaser text or upload a PDF first.", "error");
+
+      const btn = $("t-read");
+      btn.disabled = true;
+      btn.textContent = "Reading…";
+      setTeaserStatus("Claude is reading the teaser. This usually takes a few seconds.", "");
+      let res, data;
+      try {
+        res = await fetch("/api/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, pdf: teaserPdf }),
+        });
+        data = await res.json().catch(() => null);
+      } catch {
+        data = null;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Read teaser";
+      }
+
+      const costLine = data && data.cost
+        ? `<span class="cost">${escapeHtml(data.model || "Claude")} · ${data.cost.inputTokens.toLocaleString()} input + ${data.cost.outputTokens.toLocaleString()} output tokens · est. cost ${formatUsd(data.cost.usd)}</span>`
+        : "";
+      if (!res || !data) {
+        return setTeaserStatus("Couldn't reach the SearchDesk server. Make sure it's running (npm start) and that you opened http://localhost:3000.", "error");
+      }
+      if (!res.ok || !data.fields) {
+        const msg = data.error && data.error.message ? data.error.message : "Something went wrong reading the teaser. Try again.";
+        return setTeaserStatus(escapeHtml(msg) + costLine, "error");
+      }
+      applyExtracted(data.fields, text);
+      const filled = document.querySelectorAll(".field.ai-filled").length;
+      setTeaserStatus(
+        `<strong>Filled ${filled} field${filled === 1 ? "" : "s"}</strong> (marked <span class="ai-tag">AI</span>). ` +
+        `Anything the teaser didn't state is left blank. Check each field, then save.` + costLine, "ok");
+    }
+
+    // Put Claude's fields into the form. Only fields it found are changed and highlighted.
+    function applyExtracted(f, pastedText) {
+      clearAiMarks();
+      const setText = (id, v) => { if (v) { $(id).value = v; markAi(id); } };
+      const setChoice = (id, v, list) => { if (v && list.includes(v)) { $(id).value = v; markAi(id); } };
+      const setAmount = (id, v) => { if (typeof v === "number" && v > 0) { $(id).value = money(v); markAi(id); } };
+
+      setText("f-name", f.business_name);
+      setText("f-desc", f.description);
+      setChoice("f-industry", f.industry, INDUSTRIES);
+      setChoice("f-state", f.state, STATES);
+      setText("f-contact", f.contact_name);
+      setChoice("f-role", f.contact_role, ["Broker", "Owner", "Other"]);
+      setAmount("f-price", f.asking_price);
+      if (f.earnings_type && f.earnings_amount) {
+        document.querySelectorAll('input[name="earningsType"]').forEach(r => { r.checked = r.value === f.earnings_type; });
+        updateEarningsUI();
+        setAmount("f-earnings", f.earnings_amount);
+        markAi("earnings-type-field");
+      }
+      setAmount("f-revenue", f.revenue);
+      setChoice("f-growth", f.growth, GROWTH);
+      setChoice("f-reason", f.reason_for_sale, ["Retiring", "Other"]);
+
+      if (f.summary) {
+        const parts = ["AI summary: " + f.summary];
+        if (pastedText) parts.push("--- Teaser text ---\n" + pastedText);
+        const existing = $("f-notes").value.trim();
+        if (existing) parts.push(existing);
+        $("f-notes").value = parts.join("\n\n");
+        markAi("f-notes");
+      }
+      updateChannelUI();
+      renderScreen();
+    }
+
     // ----- Wiring -----
     function init() {
       buyBox = Object.assign({}, DEFAULT_BUYBOX, load(BB_KEY, {}));
@@ -1118,6 +1296,19 @@
       const form = $("deal-form");
       form.addEventListener("input", renderScreen);
       form.addEventListener("change", renderScreen);
+      // Editing a field the AI filled removes its highlight (you've now checked it)
+      const unmark = e => { const fld = e.target.closest(".field"); if (fld) fld.classList.remove("ai-filled"); };
+      form.addEventListener("input", unmark);
+      form.addEventListener("change", unmark);
+
+      // AI teaser reading (only works when served by npm start, not when opened as a file)
+      $("t-pdf").addEventListener("change", onPdfChosen);
+      $("t-file-clear").addEventListener("click", clearPdf);
+      $("t-read").addEventListener("click", readTeaser);
+      if (location.protocol === "file:") {
+        $("t-read").disabled = true;
+        setTeaserStatus("AI teaser reading needs the local server. In the SearchDesk folder run <strong>npm start</strong>, then open <strong>http://localhost:3000</strong>. Everything else on this page works as is.", "error");
+      }
       document.querySelectorAll('input[name="channel"]').forEach(r => r.addEventListener("change", () => {
         $("f-role").value = r.value === "Direct outreach" ? "Owner" : "Broker";
         updateChannelUI();
