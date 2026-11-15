@@ -3,14 +3,25 @@
 > Give this file to your coding agent and check that it is using these instructions. Keep the stack, commands, and ground rules current.
 
 ## 1. Project Overview
-- **What this repo builds:** [1–2 sentence summary]
-- **Primary user & core workflow:** [See the living PRD in `docs/index.html`]
-- **Tech stack:** [e.g., Python 3.12 / FastAPI / Next.js / SQLite / OpenRouter API]
+- **What this repo builds:** SearchDesk, the home base for first-time acquisition searchers: every deal, from brokers or direct outreach, captured, screened, and moved forward in one pipeline. Build 2 adds AI teaser reading (paste a teaser or upload a PDF, and Claude pre-fills the deal form for review).
+- **Primary user & core workflow:** First-time ETA searchers. Add a deal (teaser or direct outreach) → review its key facts → see buy box fit and a quick financial read → save it to the pipeline with a stage and next step. Full details in the living PRD (`docs/index.html`).
+- **Tech stack:** Plain HTML/CSS/JavaScript front end (no framework) · Node.js 21.7+ server using only built-in modules plus the official `@anthropic-ai/sdk` · Claude Haiku 5.5 with structured output · browser localStorage for data · PostHog for analytics · GitHub Pages for the Product Page.
 
-## 2. Commands
-- **Install dependencies:** `npm install` (Node 21.7+; one dependency, the official `@anthropic-ai/sdk`).
-- **API key:** put `ANTHROPIC_API_KEY=...` in `.env` (git-ignored; see `.env.example`). Only `server.js` reads it; it is never logged or sent to the browser.
-- **Run locally:** `npm start`, then open http://localhost:3000. AI teaser reading (`POST /api/extract`, Claude Haiku 5.5) only works this way. Opening `app/index.html` directly still works for everything except AI teaser reading. Deals are saved in the browser's localStorage.
+### Project structure
+| Path | What it is |
+| --- | --- |
+| `app/index.html` | The SearchDesk app: one self-contained page (buy box, add deal + teaser reader, instant screen, capital stack, pipeline). Saves deals in the browser's localStorage. |
+| `server.js` | Local server: serves `app/index.html` at http://localhost:3000 and handles `POST /api/extract` (sends the teaser to Claude, returns structured fields plus tokens and cost). The only file that reads the API key. |
+| `docs/` | Public Product Page and living PRD (`docs/index.html`), published with GitHub Pages; screenshots in `docs/images/`. |
+| `test-data/` | Fictional sample teasers (text and PDF) and the fields each should produce (`test-data/README.md`). |
+| `package.json` | `npm start` script and the one dependency. |
+| `.env.example` | Template for `.env`: placeholder names only, safe to commit. `.env` itself is git-ignored. |
+
+## 2. Local Setup & Commands
+1. **Install dependencies:** `npm install` (Node 21.7+; one dependency, the official `@anthropic-ai/sdk`).
+2. **Create `.env`:** copy `.env.example` to `.env` (Git Bash / Mac: `cp .env.example .env`; Windows Command Prompt: `copy .env.example .env`), then replace `paste-your-key-here` with your Anthropic API key (`ANTHROPIC_API_KEY=sk-ant-...`, no quotes or spaces). `.env` is git-ignored. Only `server.js` reads it; the key is never logged or sent to the browser.
+3. **Start the server:** `npm start`. It prints whether AI teaser reading is on (key found) or off. Restart it after changing `.env`.
+4. **Open the app:** http://localhost:3000. AI teaser reading only works this way; opening `app/index.html` directly still works for everything else. Deals are saved in the browser's localStorage.
 - **Run deterministic tests:** None yet. Check manually: add, edit, and delete a deal, then reopen the page to confirm it was saved.
 - **Run model evals:** None yet. Manual check: read the teasers in `test-data/` and compare with the expected fields in `test-data/README.md` (each run costs well under 1¢).
 

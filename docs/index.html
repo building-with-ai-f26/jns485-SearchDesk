@@ -199,9 +199,13 @@
     <section id="live-demo">
       <h2>Product Showcase (Prototype / Live App / 2-Min Video)</h2>
       <p>
-        <strong>Current Status:</strong> Build 1: local prototype.<br />
-        <strong>Demo:</strong> Screenshots of the local prototype below (fictional sample deals). Live cloud app URL coming in Build 5.
+        <strong>Current Status:</strong> Build 2: local app with AI teaser reading.<br />
+        <strong>Demo:</strong> Screenshots of the local app below (fictional sample deals). Live cloud app URL coming in Build 5.
       </p>
+      <figure>
+        <a href="images/build2-ai-teaser.png"><img src="images/build2-ai-teaser.png" alt="SearchDesk Paste a teaser panel after reading a sample PDF teaser: the deal form is pre-filled with fields marked AI, and a status line shows tokens used and an estimated cost of $0.00073" /></a>
+        <figcaption>Build 2 · AI teaser reading: upload a PDF or paste a teaser, and Claude Haiku 5.5 pre-fills the deal form. Fields it filled are marked AI for review; anything the teaser didn't state stays blank. This run cost about $0.0007 (fictional sample teaser).</figcaption>
+      </figure>
       <figure>
         <a href="images/build1-pipeline.png"><img src="images/build1-pipeline.png" alt="SearchDesk pipeline view with three sample deals grouped by stage, showing buy box fit, verdict, and an overdue next step highlighted in red" /></a>
         <figcaption>Pipeline: every deal grouped by stage, with channel, buy box fit, verdict, and overdue next steps flagged in red.</figcaption>
@@ -231,23 +235,25 @@
       </ul>
 
       <h3>3. How It Works Under the Hood & Riskiest Assumption (Week 2+)</h3>
-      <p><strong>Riskiest Assumption:</strong> Coming in Week 2 (PRD v2).</p>
-      <p><strong>Simple Architecture (Build 1):</strong> Deal facts, buy box, and financing typed into the browser → screening and capital stack math in one web page (<code>app/index.html</code>) → saved in the browser's local storage → pipeline view. No server or AI model yet.</p>
+      <p><strong>Riskiest Assumption:</strong> Searchers won't see enough reason to switch from the Excel + HubSpot setup they already use.</p>
+      <p><strong>How Build 2 tests it:</strong> Build 2 adds the first feature Excel and HubSpot can't do — AI teaser reading that turns a pasted teaser or PDF into a screened deal in seconds. PostHog now tracks whether people actually use it (<code>teaser_read</code> vs. manual deal entry), and I'll ask pod testers on Nov 17 whether it would make them switch and what's missing. Secondary risk: AI extraction accuracy on real teasers — tested so far on fictional samples, with every AI-filled field tagged for user review.</p>
+      <p><strong>Next to reduce the risk:</strong> Industry benchmarks (Build 3) and searcher-specific relationship tracking (brokers, owners, lenders), plus a possible import from Excel/HubSpot to lower switching cost.</p>
+      <p><strong>How the app works:</strong> Browser (paste teaser or upload PDF) → local Node server (API key kept in <code>.env</code>) → Claude API (Haiku, structured output) → extracted deal fields → user reviews and edits → buy box screen + capital stack → saved to pipeline (stored in the browser).</p>
 
       <h3>4. Unit Economics & Analytics Snapshot (Updated Weekly)</h3>
       <div class="grid-2">
         <div class="stat-box">
           <div class="stat-label">Cumulative Build Spend</div>
-          <div class="stat-value">$20 (Claude Pro subscription)</div>
-          <p class="meta">Token usage through Nov 10: ~448K tokens written by Claude Code (72 calls), about $6.63 at Opus 5.5 API rates. Not billed separately; covered by the Pro plan.</p>
+          <div class="stat-value">$20 Claude Pro + $5 API credit (under $0.10 used)</div>
+          <p class="meta">Claude Code token usage through Nov 15: ~947K tokens written across 190 calls (plus ~32M cheaper cached re-reads), about $16.34 at Opus 5.5 API rates. Not billed separately; covered by the Pro plan.</p>
         </div>
         <div class="stat-box">
           <div class="stat-label">Est. Cost Per User Run</div>
-          <div class="stat-value">$0 (no AI API calls yet)</div>
+          <div class="stat-value">~$0.0003 per teaser read (Claude Haiku)</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">User Evidence (Analytics from Build 2)</div>
-          <div class="stat-value">Not yet measured (Build 2)</div>
+          <div class="stat-value">PostHog installed in Build 2; first data coming in.</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Sponsor Call (Week 6)</div>
