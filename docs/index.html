@@ -228,9 +228,9 @@
 
       <h3>2. Scope & Explicit Non-Goals</h3>
       <ul>
-        <li><strong>In Scope (Core Workflow):</strong> Add a deal (broker teaser or direct outreach) → enter its key facts → see buy box fit + a quick financial read → save it to the pipeline with a stage and next step. Each searcher sets their buy box once (target industries, geography, deal size, and seller situation), and every deal is checked against it.</li>
-        <li><strong>Out of Scope #1:</strong> No AI teaser reading yet. Facts are typed in by hand; automatic teaser reading is planned with an API key in a later build.</li>
-        <li><strong>Out of Scope #2:</strong> No email or calendar sync, so no full CRM integration in v1.</li>
+        <li><strong>In Scope (Core Workflow):</strong> Add a deal by pasting a broker teaser or uploading a PDF (AI pre-fills the key facts for review) or entering it by hand → see buy box fit + a quick financial read → save it to the pipeline with a stage and next step. Each searcher sets their buy box once (target industries, geography, deal size, and seller situation), and every deal is checked against it.</li>
+        <li><strong>Out of Scope #1:</strong> No automatic inbox capture. Teasers are pasted or uploaded by hand; pulling them straight from email is a later idea.</li>
+        <li><strong>Out of Scope #2:</strong> No email or calendar sync or contact tracking yet. Relationship tracking for brokers, owners, and lenders is planned for a later build.</li>
         <li><strong>Out of Scope #3:</strong> No automatic deal sourcing or full valuation. It's a quick screen, not a model or investment advice.</li>
       </ul>
 
@@ -282,7 +282,7 @@
         <ul>
           <li><strong>What shipped:</strong> Green design refresh and desk logo; AI teaser reading (paste text or upload a PDF → fields pre-filled with AI tags, unknowns left blank) via a local Node server and the Claude API; PostHog with pageviews, clicks, and session replay; PRD v2; updated AGENTS.md.</li>
           <li><strong>Things learned with AI:</strong> Why API keys must live on a server and not in browser code; <code>.env</code> and <code>node_modules</code> stay out of GitHub; PostHog's project key is public by design, unlike the Anthropic key.</li>
-          <li><strong>What broke / changed in PRD:</strong> My first API key was unusable because I only had the truncated preview, so I created a new one. The server didn't find the key at first because it only reads <code>.env</code> on startup and needed a restart. The app now runs with <code>npm start</code> instead of double-clicking the file.</li>
+          <li><strong>What broke / changed in PRD:</strong> My first API key was unusable because I only had the truncated preview, so I created a new one. The server didn't find the key at first because it only reads <code>.env</code> on startup and needed a restart. The app now runs with <code>npm start</code> instead of double-clicking the file. Moved AI teaser reading from out of scope to in scope.</li>
           <li><strong>Cost & time this week:</strong> $20/month Claude Pro (no extra per-prompt charges) + $5 Anthropic API credit (under $0.10 used; ~$0.0003–$0.0007 per teaser read); PostHog free tier ($0) · 2 hours</li>
         </ul>
       </div>
