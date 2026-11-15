@@ -230,6 +230,23 @@
       section { padding: 18px 16px; }
     }
   </style>
+  <!-- PostHog analytics (US cloud). Pageviews, clicks, session replay, and 3 custom events (see track() below).
+       The phc_ project key is PostHog's public, write-only key: safe in web pages (not a secret). -->
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog&&window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags on onFeatureFlags onSessionId identify setPersonProperties group resetGroups reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init("phc_Cr36NvgmtGizmhAg652AgwB7waVDCZhLijz5fAhd5ZeC", {
+      api_host: "https://us.i.posthog.com",
+      person_profiles: "identified_only",
+      capture_pageview: true,   // pageviews
+      autocapture: true,        // clicks
+      // Privacy: clicks are recorded without the text or attributes of what was clicked
+      // (a deal card's text includes financials)
+      mask_all_text: true,
+      mask_all_element_attributes: true,
+      // Session replay: every input is masked, and on-screen deal details (.ph-mask) show as ***
+      session_recording: { maskAllInputs: true, maskTextSelector: ".ph-mask, .ph-mask *" },
+    });
+  </script>
 </head>
 <body>
   <div class="container">
@@ -261,7 +278,7 @@
     <!-- 1. BUY BOX -->
     <section id="buybox">
       <details>
-        <summary><h2>1. Your buy box</h2><span id="bb-summary" class="meta"></span></summary>
+        <summary><h2>1. Your buy box</h2><span id="bb-summary" class="meta ph-mask"></span></summary>
         <div class="buybox-body">
           <div class="field">
             <span class="label">Target industries <span class="hint">(must match)</span></span>
@@ -317,7 +334,7 @@
 
     <!-- 2. ADD A DEAL + INSTANT SCREEN -->
     <section id="add">
-      <div class="section-head"><h2 id="form-title">2. Add a deal</h2><span class="meta">The screen on the right updates as you type.</span></div>
+      <div class="section-head"><h2 id="form-title" class="ph-mask">2. Add a deal</h2><span class="meta">The screen on the right updates as you type.</span></div>
 
       <!-- AI teaser reading: needs the local server (npm start) -->
       <div class="teaser-box" id="teaser-box">
@@ -424,7 +441,7 @@
             </div>
           </div>
 
-          <aside class="screen-panel">
+          <aside class="screen-panel ph-mask">
             <h3>Instant screen</h3>
             <div class="field">
               <label for="a-salary">Your salary ($/yr) <span class="hint">(used for DSCR on every deal)</span></label>
@@ -474,7 +491,7 @@
                 <button type="submit" class="btn" id="save-btn">Save to pipeline</button>
                 <button type="button" class="btn btn-secondary" id="cancel-btn" hidden>Cancel edit</button>
               </div>
-              <div class="form-msg" id="form-msg"></div>
+              <div class="form-msg ph-mask" id="form-msg"></div>
             </div>
           </aside>
         </div>
@@ -488,7 +505,7 @@
         <span id="pipe-summary" class="meta"></span>
         <button type="button" class="btn-link" id="reset-samples">Reload sample deals</button>
       </div>
-      <div id="board"></div>
+      <div id="board" class="ph-mask"></div>
     </section>
   </div>
 
@@ -766,6 +783,16 @@
     let buyBox = {};
     let assumptions = {};
     let editingId = null;
+    let aiFilledThisDeal = false; // for analytics: was the teaser reader used on the deal being saved?
+
+    // ----- Analytics (PostHog, loaded in <head>) -----
+    // Only send the whitelisted, non-sensitive properties listed in each call:
+    // never business names, contacts, teaser text, notes, or dollar amounts.
+    function track(event, props) {
+      try {
+        if (window.posthog && typeof window.posthog.capture === "function") window.posthog.capture(event, props);
+      } catch { /* analytics must never break the app */ }
+    }
     const $ = id => document.getElementById(id);
 
     function persistDeals() { store(DEAL_KEY, deals); }
@@ -991,13 +1018,26 @@
       if (pctOff(total)) missing.push(`financing percentages that add up to 100% (now ${+total.toFixed(2)}%)`);
       if (missing.length) { showMsg("Please add: " + missing.join(", ") + ".", "error"); return; }
 
+      const isEdit = !!editingId;
+      let prevStage = null;
       if (editingId) {
         const i = deals.findIndex(x => x.id === editingId);
-        if (i >= 0) deals[i] = Object.assign({}, deals[i], d);
+        if (i >= 0) { prevStage = deals[i].stage; deals[i] = Object.assign({}, deals[i], d); }
       } else {
         deals.push(Object.assign({ id: newId(), createdAt: todayISO() }, d));
       }
       persistDeals();
+      track("deal_saved", {
+        is_edit: isEdit,
+        channel: d.channel,
+        earnings_type: d.earningsType,
+        stage: d.stage,
+        verdict: screenDeal(d, buyBox, assumptions).verdict || "none",
+        ai_filled: aiFilledThisDeal,
+      });
+      if (isEdit && prevStage && prevStage !== d.stage) {
+        track("stage_changed", { from_stage: prevStage, to_stage: d.stage, via: "edit_form" });
+      }
       const name = d.name;
       resetForm();
       renderPipeline();
@@ -1034,6 +1074,7 @@
       editingId = id;
       setFormValues(d);
       clearAiMarks();
+      aiFilledThisDeal = false;
       $("form-title").textContent = "2. Edit deal: " + d.name;
       $("save-btn").textContent = "Update deal";
       $("cancel-btn").hidden = false;
@@ -1052,6 +1093,7 @@
       $("cancel-btn").hidden = true;
       $("f-role").value = "Broker";
       clearAiMarks();
+      aiFilledThisDeal = false;
       // Clear the teaser box too, so the next deal starts fresh
       $("t-text").value = "";
       clearPdf();
@@ -1187,6 +1229,8 @@
       const text = $("t-text").value.trim();
       if (!text && !teaserPdf) return setTeaserStatus("Paste teaser text or upload a PDF first.", "error");
 
+      const source = text && teaserPdf ? "both" : teaserPdf ? "pdf" : "text";
+      const startedAt = Date.now();
       const btn = $("t-read");
       btn.disabled = true;
       btn.textContent = "Reading…";
@@ -1209,15 +1253,26 @@
       const costLine = data && data.cost
         ? `<span class="cost">${escapeHtml(data.model || "Claude")} · ${data.cost.inputTokens.toLocaleString()} input + ${data.cost.outputTokens.toLocaleString()} output tokens · est. cost ${formatUsd(data.cost.usd)}</span>`
         : "";
+      // Analytics: only the outcome, a count, and the AI cost (never teaser text or deal numbers)
+      const teaserEvent = (success, errorCode, fieldsFilled) => track("teaser_read", {
+        success, source, error_code: errorCode || null, fields_filled: fieldsFilled,
+        duration_ms: Date.now() - startedAt,
+        input_tokens: data && data.cost ? data.cost.inputTokens : null,
+        output_tokens: data && data.cost ? data.cost.outputTokens : null,
+        cost_usd: data && data.cost ? data.cost.usd : null,
+      });
       if (!res || !data) {
+        teaserEvent(false, "server_unreachable", 0);
         return setTeaserStatus("Couldn't reach the SearchDesk server. Make sure it's running (npm start) and that you opened http://localhost:3000.", "error");
       }
       if (!res.ok || !data.fields) {
         const msg = data.error && data.error.message ? data.error.message : "Something went wrong reading the teaser. Try again.";
+        teaserEvent(false, data.error && data.error.code ? String(data.error.code) : "unknown", 0);
         return setTeaserStatus(escapeHtml(msg) + costLine, "error");
       }
       applyExtracted(data.fields, text);
       const filled = document.querySelectorAll(".field.ai-filled").length;
+      teaserEvent(true, null, filled);
       setTeaserStatus(
         `<strong>Filled ${filled} field${filled === 1 ? "" : "s"}</strong> (marked <span class="ai-tag">AI</span>). ` +
         `Anything the teaser didn't state is left blank. Check each field, then save.` + costLine, "ok");
@@ -1226,6 +1281,7 @@
     // Put Claude's fields into the form. Only fields it found are changed and highlighted.
     function applyExtracted(f, pastedText) {
       clearAiMarks();
+      aiFilledThisDeal = true;
       const setText = (id, v) => { if (v) { $(id).value = v; markAi(id); } };
       const setChoice = (id, v, list) => { if (v && list.includes(v)) { $(id).value = v; markAi(id); } };
       const setAmount = (id, v) => { if (typeof v === "number" && v > 0) { $(id).value = money(v); markAi(id); } };
@@ -1330,7 +1386,13 @@
       $("board").addEventListener("change", e => {
         if (e.target.dataset.action !== "stage") return;
         const d = deals.find(x => x.id === e.target.dataset.id);
-        if (d) { d.stage = e.target.value; persistDeals(); renderPipeline(); }
+        if (d && d.stage !== e.target.value) {
+          const from = d.stage;
+          d.stage = e.target.value;
+          persistDeals();
+          track("stage_changed", { from_stage: from, to_stage: d.stage, via: "pipeline_card" });
+          renderPipeline();
+        }
       });
       $("board").addEventListener("click", e => {
         const btn = e.target.closest("button[data-action]");

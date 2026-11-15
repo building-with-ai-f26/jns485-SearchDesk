@@ -14,6 +14,11 @@
 - **Run deterministic tests:** None yet. Check manually: add, edit, and delete a deal, then reopen the page to confirm it was saved.
 - **Run model evals:** None yet. Manual check: read the teasers in `test-data/` and compare with the expected fields in `test-data/README.md` (each run costs well under 1¢).
 
+## 2a. Analytics (PostHog, US cloud)
+- Installed in `docs/index.html` and `app/index.html`: pageviews, click autocapture, and session replay. The `phc_` project key is PostHog's public write-only key, so it lives in the HTML (not `.env`).
+- Custom app events (sent through `track()` in `app/index.html`): `teaser_read` (success, source, error_code, fields_filled, duration_ms, tokens, cost_usd), `deal_saved` (is_edit, channel, earnings_type, stage, verdict, ai_filled), `stage_changed` (from_stage, to_stage, via).
+- Privacy rules: never send business names, contacts, teaser text, notes, or dollar amounts as event properties. Session replay masks all inputs and any element with class `ph-mask` (instant screen, pipeline, buy box summary). Autocapture does not send element text in the app. Keep `ph-mask` on new elements that show deal details.
+
 ## 3. Non-Negotiable Engineering Rules
 1. **Plan before coding:** Before touching multiple files, propose a brief plan and wait for approval.
 2. **Small batches:** Make small, focused changes that can be reviewed and explained by a human in a single Pull Request.
