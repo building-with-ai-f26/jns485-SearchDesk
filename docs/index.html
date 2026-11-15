@@ -280,9 +280,10 @@
       <div class="log-entry">
         <h3>Build 2 · Smallest Local Version & PostHog (Due Nov 16)</h3>
         <ul>
-          <li><strong>What shipped:</strong> Coming in Week 2.</li>
-          <li><strong>What broke / changed in PRD:</strong> Coming in Week 2.</li>
-          <li><strong>Cost & time this week:</strong> Not yet logged (Build 2).</li>
+          <li><strong>What shipped:</strong> Green design refresh and desk logo; AI teaser reading (paste text or upload a PDF → fields pre-filled with AI tags, unknowns left blank) via a local Node server and the Claude API; PostHog with pageviews, clicks, and session replay; PRD v2; updated AGENTS.md.</li>
+          <li><strong>Things learned with AI:</strong> Why API keys must live on a server and not in browser code; <code>.env</code> and <code>node_modules</code> stay out of GitHub; PostHog's project key is public by design, unlike the Anthropic key.</li>
+          <li><strong>What broke / changed in PRD:</strong> My first API key was unusable because I only had the truncated preview, so I created a new one. The server didn't find the key at first because it only reads <code>.env</code> on startup and needed a restart. The app now runs with <code>npm start</code> instead of double-clicking the file.</li>
+          <li><strong>Cost & time this week:</strong> $20/month Claude Pro (no extra per-prompt charges) + $5 Anthropic API credit (under $0.10 used; ~$0.0003–$0.0007 per teaser read); PostHog free tier ($0) · 2 hours</li>
         </ul>
       </div>
 
