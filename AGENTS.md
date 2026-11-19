@@ -14,6 +14,7 @@
 | `server.js` | Local server: serves `app/index.html` at http://localhost:3000 and handles `POST /api/extract` (sends the teaser to Claude, returns structured fields plus tokens and cost). The only file that reads the API key. |
 | `docs/` | Public Product Page and living PRD (`docs/index.html`), published with GitHub Pages; screenshots in `docs/images/`. |
 | `test-data/` | Fictional sample teasers (text and PDF) and the fields each should produce (`test-data/README.md`). |
+| `model/` | The approved financial model template (`model/searchdesk-model-template.xlsx`, v1.0). Read-only: ask before changing it (see "Ask me first"). |
 | `package.json` | `npm start` script and the one dependency. |
 | `.env.example` | Template for `.env`: placeholder names only, safe to commit. `.env` itself is git-ignored. |
 
