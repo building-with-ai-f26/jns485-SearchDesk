@@ -1,7 +1,8 @@
-// SearchDesk local server.
-// - Serves the prototype (app/index.html) at http://localhost:3000
+// SearchDesk server (runs locally or on Render).
+// - Serves the prototype (app/index.html) at http://localhost:3000 (or your onrender.com address)
 // - POST /api/extract: sends a pasted teaser (text and/or PDF) to Claude and returns structured deal fields.
-// The API key is read from .env on this computer. It is never logged, printed, or sent to the browser.
+// The API key is read from the ANTHROPIC_API_KEY environment variable (from .env locally, or from Render's
+// Environment settings). It is never logged, printed, or sent to the browser.
 
 import http from "node:http";
 import fs from "node:fs";
@@ -9,8 +10,20 @@ import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 
 const ROOT = import.meta.dirname;
+const ON_RENDER = Boolean(process.env.RENDER); // Render sets RENDER=true on its servers
 const PORT = Number(process.env.PORT) || 3000;
-const HOST = "127.0.0.1"; // only reachable from this computer
+// On Render, listen on all network interfaces so Render can route visitors to the app.
+// On your own computer, stay reachable only from this computer.
+const HOST = process.env.HOST || (ON_RENDER ? "0.0.0.0" : "127.0.0.1");
+
+// Websites allowed to call /api/extract: this computer, plus your onrender.com address.
+// Render sets RENDER_EXTERNAL_HOSTNAME (e.g. searchdesk.onrender.com) automatically.
+// ALLOWED_HOSTS (optional, comma-separated) adds more, e.g. a custom domain.
+const ALLOWED_HOSTS = new Set(
+  ["localhost", "127.0.0.1", process.env.RENDER_EXTERNAL_HOSTNAME, ...(process.env.ALLOWED_HOSTS || "").split(",")]
+    .map((h) => (h || "").trim().toLowerCase())
+    .filter(Boolean),
+);
 
 // Load .env if it exists (Node built-in; values already set in the environment win).
 try { process.loadEnvFile(path.join(ROOT, ".env")); } catch { /* no .env file: handled per request */ }
@@ -35,8 +48,14 @@ const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID"
   "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX",
   "UT","VT","VA","WA","WV","WI","WY"];
 
-const MAX_BODY_BYTES = 15 * 1024 * 1024; // a 10 MB PDF is about 13.4 MB once base64-encoded
-const MAX_PDF_BYTES = 10 * 1024 * 1024;
+const MAX_PDF_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_BODY_BYTES = 7 * 1024 * 1024; // a 5 MB PDF is about 6.7 MB once base64-encoded, plus pasted text
+const TOO_LARGE_MESSAGE = "That upload is too large. PDFs must be 5 MB or smaller. Try a smaller PDF, or copy the teaser text and paste it instead.";
+
+// ----- Rate limit for POST /api/extract (protects your API credit once the app is public) -----
+const RATE_LIMIT = 10; // requests
+const RATE_WINDOW_MS = 15 * 60 * 1000; // per 15 minutes, per visitor IP
+const recentRequests = new Map(); // visitor IP -> times of their recent requests
 const MAX_TEXT_CHARS = 100_000;
 
 // ----- What we ask Claude for -----
@@ -89,18 +108,66 @@ function sendError(res, status, code, message) {
   sendJson(res, status, { error: { code, message } });
 }
 
+// Read the request body, up to MAX_BODY_BYTES. Past the limit, stop saving it but let the upload finish,
+// so the browser receives the "too large" message instead of a dropped connection.
 function readBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
     req.on("data", (chunk) => {
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) { reject(Object.assign(new Error("too large"), { tooLarge: true })); req.destroy(); return; }
-      chunks.push(chunk);
+      if (size > MAX_BODY_BYTES * 3) { req.destroy(); return; } // far too big: just hang up
+      if (size <= MAX_BODY_BYTES) chunks.push(chunk);
     });
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    req.on("end", () => {
+      if (size > MAX_BODY_BYTES) return reject(Object.assign(new Error("too large"), { tooLarge: true }));
+      resolve(Buffer.concat(chunks).toString("utf8"));
+    });
     req.on("error", reject);
+    req.on("close", () => reject(Object.assign(new Error("closed"), { tooLarge: size > MAX_BODY_BYTES })));
   });
+}
+
+// The visitor's real IP. On Render, requests pass through Cloudflare and Render's proxy, so the
+// connection itself comes from the proxy. Cloudflare puts the visitor's IP in True-Client-IP /
+// CF-Connecting-IP (visitors can't fake these); X-Forwarded-For is only a fallback because visitors
+// can add fake entries to it. Locally there is no proxy, so use the connection's address.
+function clientIp(req) {
+  if (ON_RENDER) {
+    const h = req.headers;
+    const ip = h["true-client-ip"] || h["cf-connecting-ip"] || String(h["x-forwarded-for"] || "").split(",")[0];
+    if (ip && ip.trim()) return ip.trim();
+  }
+  return req.socket.remoteAddress || "unknown";
+}
+
+// Sliding window: allow RATE_LIMIT requests per RATE_WINDOW_MS for each IP.
+// Returns 0 if this request is allowed, otherwise the number of seconds to wait.
+function rateLimitWait(ip) {
+  const now = Date.now();
+  const times = (recentRequests.get(ip) || []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (times.length >= RATE_LIMIT) {
+    recentRequests.set(ip, times);
+    return Math.ceil((times[0] + RATE_WINDOW_MS - now) / 1000);
+  }
+  times.push(now);
+  recentRequests.set(ip, times);
+  return 0;
+}
+// Forget visitors with no recent requests, so memory use stays small.
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, times] of recentRequests) {
+    if (!times.some((t) => now - t < RATE_WINDOW_MS)) recentRequests.delete(ip);
+  }
+}, RATE_WINDOW_MS).unref();
+
+// Only accept /api/extract calls from the SearchDesk page itself (localhost or your onrender.com address),
+// not from other websites. Browsers always send an Origin header with these calls.
+function originAllowed(req) {
+  const origin = req.headers.origin;
+  if (!origin) return true; // not from a web page (e.g. curl); the rate limit still applies
+  try { return ALLOWED_HOSTS.has(new URL(origin).hostname.toLowerCase()); } catch { return false; }
 }
 
 function getApiKey() {
@@ -149,17 +216,33 @@ function cleanFields(raw) {
 
 // ----- POST /api/extract -----
 async function handleExtract(req, res) {
+  if (!originAllowed(req)) {
+    return sendError(res, 403, "forbidden_origin", "Teaser reading only works from the SearchDesk app itself.");
+  }
+  const wait = rateLimitWait(clientIp(req));
+  if (wait) {
+    const minutes = Math.max(1, Math.ceil(wait / 60));
+    res.setHeader("Retry-After", String(wait));
+    return sendError(res, 429, "too_many_requests",
+      `You've read ${RATE_LIMIT} teasers in the last 15 minutes, which is the limit. Try again in about ${minutes} minute${minutes === 1 ? "" : "s"}, or enter this deal by hand.`);
+  }
+  if (Number(req.headers["content-length"]) > MAX_BODY_BYTES) {
+    res.setHeader("Connection", "close");
+    return sendError(res, 413, "too_large", TOO_LARGE_MESSAGE);
+  }
+
   const apiKey = getApiKey();
   if (!apiKey) {
-    return sendError(res, 500, "missing_key",
-      "No Anthropic API key found. Open the .env file in the SearchDesk folder, replace paste-your-key-here with your key, save, and restart the server (npm start).");
+    return sendError(res, 500, "missing_key", ON_RENDER
+      ? "AI teaser reading isn't set up on this server yet (no API key). You can still enter deals by hand."
+      : "No Anthropic API key found. Open the .env file in the SearchDesk folder, replace paste-your-key-here with your key, save, and restart the server (npm start).");
   }
 
   let body;
   try {
     body = JSON.parse(await readBody(req));
   } catch (err) {
-    if (err.tooLarge) return sendError(res, 413, "too_large", "That upload is too large. PDFs must be 10 MB or smaller.");
+    if (err.tooLarge) return sendError(res, 413, "too_large", TOO_LARGE_MESSAGE);
     return sendError(res, 400, "bad_request", "The request couldn't be read. Try again.");
   }
 
@@ -171,7 +254,7 @@ async function handleExtract(req, res) {
   const content = [];
   if (pdfB64) {
     const bytes = Buffer.from(pdfB64, "base64");
-    if (bytes.length > MAX_PDF_BYTES) return sendError(res, 413, "too_large", "That PDF is larger than 10 MB.");
+    if (bytes.length > MAX_PDF_BYTES) return sendError(res, 413, "too_large", TOO_LARGE_MESSAGE);
     if (bytes.subarray(0, 5).toString("latin1") !== "%PDF-") {
       return sendError(res, 400, "bad_pdf", "That file doesn't look like a PDF. Check the file, or copy the teaser text and paste it instead.");
     }
@@ -266,9 +349,13 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`SearchDesk is running at http://localhost:${PORT}`);
+  console.log(ON_RENDER
+    ? `SearchDesk is running on Render (port ${PORT}).`
+    : `SearchDesk is running at http://localhost:${PORT}`);
   console.log(getApiKey()
     ? `AI teaser reading is on (${MODEL_LABEL}).`
-    : "AI teaser reading is off: add your key to .env, then restart.");
+    : ON_RENDER
+      ? "AI teaser reading is off: set ANTHROPIC_API_KEY in Render's Environment settings."
+      : "AI teaser reading is off: add your key to .env, then restart.");
   console.log("Press Ctrl+C to stop.");
 });

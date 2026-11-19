@@ -31,6 +31,22 @@
 - Custom app events (sent through `track()` in `app/index.html`): `teaser_read` (success, source, error_code, fields_filled, duration_ms, tokens, cost_usd), `deal_saved` (is_edit, channel, earnings_type, stage, verdict, ai_filled), `stage_changed` (from_stage, to_stage, via).
 - Privacy rules: never send business names, contacts, teaser text, notes, or dollar amounts as event properties. Session replay masks all inputs and any element with class `ph-mask` (instant screen, pipeline, buy box summary). Autocapture does not send element text in the app. Keep `ph-mask` on new elements that show deal details.
 
+## 2b. Shipping (Render free web service)
+1. **Push to GitHub:** Render deploys from the `main` branch of `building-with-ai-f26/jns485-SearchDesk`. Check that `.env` is not committed.
+2. **Create the service:** in the Render dashboard, New → Web Service → connect the GitHub repo (grant Render access to the `building-with-ai-f26` organization if asked).
+3. **Settings:** Language **Node** · Branch **main** · Root Directory blank · Build Command **`npm ci`** · Start Command **`npm start`** · Instance Type **Free**.
+4. **Environment variables:** add `ANTHROPIC_API_KEY` with your key (Render → your service → Environment). Do not set `PORT`; Render sets it. Optional: `ALLOWED_HOSTS` (comma-separated) if you add a custom domain.
+5. **Deploy and check the logs:** they should say "SearchDesk is running on Render" and "AI teaser reading is on". The key itself is never printed.
+6. **Smoke test:** open `https://<your-service>.onrender.com`, read a teaser from `test-data/`, save a deal, and reload to confirm it stays.
+
+How the server behaves on Render (it detects the `RENDER` variable that Render sets):
+- Listens on `0.0.0.0` and Render's `PORT`. Locally it still listens only on `127.0.0.1:3000`.
+- `POST /api/extract` accepts calls only from localhost and your onrender.com address (`RENDER_EXTERNAL_HOSTNAME`, set by Render) plus any `ALLOWED_HOSTS`.
+- Rate limit: 10 teaser reads per 15 minutes per visitor IP, after which it returns HTTP 429 with a message the app shows. The visitor IP comes from Cloudflare's `True-Client-IP` / `CF-Connecting-IP` headers, falling back to `X-Forwarded-For`. The counts are kept in memory, so they reset when the service restarts or sleeps.
+- Upload cap: PDFs of 5 MB or less (request bodies of 7 MB or less); anything larger gets a clear "too large" message.
+- Known limits of the free tier: the service sleeps after about 15 minutes idle, and the first visit after that takes about a minute. Deals are still saved only in each visitor's own browser (localStorage). Consider setting a monthly spend limit in the Anthropic Console.
+- Auto-deploy: every push to `main` redeploys. Follow the rules in section 3 before pushing.
+
 ## 3. Non-Negotiable Engineering Rules
 1. **Plan before coding:** Before touching multiple files, propose a brief plan and wait for approval.
 2. **Small batches:** Make small, focused changes that can be reviewed and explained by a human in a single Pull Request.

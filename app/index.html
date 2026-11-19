@@ -1176,7 +1176,7 @@
     // ----- AI teaser reading -----
     // Sends the teaser to the local server (server.js), which calls Claude with the key from .env.
     // Claude's answer only pre-fills the form; nothing is saved until you click Save.
-    const MAX_PDF_BYTES = 10 * 1024 * 1024;
+    const MAX_PDF_BYTES = 5 * 1024 * 1024; // keep in sync with server.js
     let teaserPdf = null; // { name, data (base64) }
 
     function setTeaserStatus(html, kind) {
@@ -1206,7 +1206,7 @@
       if (!file) return;
       const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
       if (!isPdf) { $("t-pdf").value = ""; return setTeaserStatus("That file isn't a PDF. Choose a .pdf teaser, or paste the text instead.", "error"); }
-      if (file.size > MAX_PDF_BYTES) { $("t-pdf").value = ""; return setTeaserStatus("That PDF is larger than 10 MB. Paste the teaser text instead.", "error"); }
+      if (file.size > MAX_PDF_BYTES) { $("t-pdf").value = ""; return setTeaserStatus("That PDF is larger than 5 MB. Try a smaller PDF, or copy the teaser text and paste it instead.", "error"); }
       const reader = new FileReader();
       reader.onload = () => {
         teaserPdf = { name: file.name, data: String(reader.result).split(",")[1] || "" };
