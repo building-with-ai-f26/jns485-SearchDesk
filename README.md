@@ -1,6 +1,6 @@
 # SearchDesk
 
-> **One-line pitch:** SearchDesk is the home base for first-time acquisition searchers: every deal, from brokers or direct outreach, captured, screened, and moved forward in one pipeline.
+> **One-line pitch:** SearchDesk turns a broker teaser into a lender-ready acquisition model in minutes, so first-time searchers can quickly tell whether a deal is affordable, financeable, and worth pursuing.
 
 - **Builder:** Jordan Steinroeder (`@jns485-stern`)
 - **Pod:** To be added
@@ -9,17 +9,23 @@
 
 ## What it does
 
-- Set your buy box once: target industries, states, SDE or EBITDA range, seller situation, and growth.
-- Add a deal from a broker or from direct outreach, using SDE or EBITDA.
-- Set **My assumptions** once (financing as % of total uses, deal costs, salary, capex, tax, target DSCR and IRR). Defaults come from the approved Excel model.
-- See an instant buy box check, then run the **financial model**: your approved Excel template (`model/searchdesk-model-template.xlsx`) is filled with the deal and your assumptions and calculated on the server. You get total uses, buyer equity, and for 4 scenarios the lowest DSCR, max price at your target DSCR, price check, 5-year IRR, and MOIC, plus a **Download Excel model** button for the filled file. The template is the only source of financial numbers; these are screening estimates, not advice.
-- Save the deal to a pipeline grouped by stage, with a dated next step. Overdue items are flagged.
-- Paste a teaser or upload a PDF, and Claude pre-fills the deal form (fields it filled are marked "AI" for you to check). Each run shows its tokens and estimated cost.
+Core workflow: set your assumptions once → paste a teaser or upload a PDF → review the AI-extracted facts → run the model → see scenarios, max price, and returns → download the Excel model.
+
+1. **Set My assumptions once:** financing (as % of total uses), deal costs, your salary, capex, tax, target DSCR, and target return. Defaults come from the approved Excel model.
+2. **Paste a teaser or upload a PDF:** Claude reads it and pre-fills the deal facts (fields it filled are marked "AI" for you to check; anything the teaser doesn't state stays blank). Each read shows its tokens and estimated cost.
+3. **Run the financial model:** your approved Excel template (`model/searchdesk-model-template.xlsx`) is filled with the deal and your assumptions and calculated on the server. You get total uses, your equity, and for 4 scenarios the lowest DSCR, max price at your target DSCR, price check, 5-year IRR, and MOIC. The AI never does the financial math; the template is the only source of numbers.
+4. **Download the Excel model:** the filled template, named after the business, to keep adjusting (for example with CIM actuals).
+
+Also included, but not being expanded: a buy box check (target industries, states, size, seller situation, growth) and a simple pipeline by stage with dated next steps.
+
+**Not:** a CRM or deal tracker, a full-CIM reader (yet), or a valuation or substitute for diligence. Results are rough screening estimates, not investment or lending advice.
 
 ## Status
 
-- **Build 1 (due Nov 9):** Done. PRD v1, local prototype, and screenshots are on the Product Page.
-- **Builds 2–5:** Coming in Weeks 2–5. Progress is logged weekly on the Product Page.
+- **Build 1 (due Nov 9):** Done. PRD v1 and a local prototype.
+- **Build 2 (due Nov 16):** Done. AI teaser reading (text or PDF) and PostHog analytics.
+- **Build 3 (due Nov 23):** Done. Live app on Render, security review (`SECURITY.md`), and the approved Excel financial model connected to the app.
+- **Builds 4–5:** Coming in Weeks 4–5. Progress is logged weekly on the Product Page.
 
 ## Repository map
 
