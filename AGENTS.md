@@ -44,6 +44,8 @@ How the server behaves on Render (it detects the `RENDER` variable that Render s
 - `POST /api/extract` accepts calls only from localhost and your onrender.com address (`RENDER_EXTERNAL_HOSTNAME`, set by Render) plus any `ALLOWED_HOSTS`.
 - Rate limit: 10 teaser reads per 15 minutes per visitor IP, after which it returns HTTP 429 with a message the app shows. The visitor IP comes from Cloudflare's `True-Client-IP` / `CF-Connecting-IP` headers, falling back to `X-Forwarded-For`. The counts are kept in memory, so they reset when the service restarts or sleeps.
 - Upload cap: PDFs of 5 MB or less (request bodies of 7 MB or less); anything larger gets a clear "too large" message.
+- Public error messages: key, access, and billing problems show visitors a general "unavailable right now" message; the detailed fix-it message only appears when running locally.
+- Security review and what is left to do: see `SECURITY.md`.
 - Known limits of the free tier: the service sleeps after about 15 minutes idle, and the first visit after that takes about a minute. Deals are still saved only in each visitor's own browser (localStorage). Consider setting a monthly spend limit in the Anthropic Console.
 - Auto-deploy: every push to `main` redeploys. Follow the rules in section 3 before pushing.
 
@@ -57,4 +59,12 @@ How the server behaves on Render (it detects the `RENDER` variable that Render s
 
 ### Ask me first
 Get explicit approval from the human builder before:
+- Deleting data (deals, files, branches, artifacts, or anything else that can't be easily recovered).
+- Anything involving keys, secrets, or permissions (creating, changing, moving, or granting access).
+- Anything that costs money: live API calls beyond the tests we agreed on, or Render plan changes.
 - Changing the approved financial model template (model/searchdesk-model-template.xlsx) or any formula that calculates financials.
+- Deploying (pushing to `main` deploys to Render automatically, so a push counts as a deploy).
+
+### Rules from real mistakes
+- **Do not claim a live AI test passed when only mocked tests have run.** (Happened in Build 2.) Say which tests used a mock and which made a real call to Claude.
+- **The server reads `.env` only at startup; restart it after changing keys.** (Happened in Build 2.) On Render, changing an environment variable redeploys the service.

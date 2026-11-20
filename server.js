@@ -100,8 +100,16 @@ Only use facts the teaser states. If a field is not stated, return null. Never e
 - summary: 2-3 plain sentences a searcher would want: what the business is, its size, and anything notable (customer concentration, owner role, real estate, growth). Do not give advice.`;
 
 // ----- Helpers -----
+// Sent with every response: don't guess file types, don't allow other sites to show SearchDesk inside a frame
+// (clickjacking), and don't send the full page address to other sites.
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+};
+
 function sendJson(res, status, body) {
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  res.writeHead(status, { ...SECURITY_HEADERS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
   res.end(JSON.stringify(body));
 }
 function sendError(res, status, code, message) {
@@ -233,9 +241,8 @@ async function handleExtract(req, res) {
 
   const apiKey = getApiKey();
   if (!apiKey) {
-    return sendError(res, 500, "missing_key", ON_RENDER
-      ? "AI teaser reading isn't set up on this server yet (no API key). You can still enter deals by hand."
-      : "No Anthropic API key found. Open the .env file in the SearchDesk folder, replace paste-your-key-here with your key, save, and restart the server (npm start).");
+    return sendError(res, 500, "missing_key", setupMessage(
+      "No Anthropic API key found. Open the .env file in the SearchDesk folder, replace paste-your-key-here with your key, save, and restart the server (npm start)."));
   }
 
   let body;
@@ -243,6 +250,10 @@ async function handleExtract(req, res) {
     body = JSON.parse(await readBody(req));
   } catch (err) {
     if (err.tooLarge) return sendError(res, 413, "too_large", TOO_LARGE_MESSAGE);
+    return sendError(res, 400, "bad_request", "The request couldn't be read. Try again.");
+  }
+  // Must be a JSON object like {"text": "...", "pdf": {...}} (not null, a number, or a list).
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
     return sendError(res, 400, "bad_request", "The request couldn't be read. Try again.");
   }
 
@@ -296,13 +307,18 @@ async function handleExtract(req, res) {
   sendJson(res, 200, { fields: cleanFields(raw), cost, model: MODEL_LABEL });
 }
 
-// Turn SDK errors into plain messages (never include the key).
+// Setup problems (key, access, billing): on your computer, say exactly what to fix. On the public site,
+// visitors get a general message instead, so they learn nothing about how the server is set up.
+const UNAVAILABLE_MESSAGE = "AI teaser reading is unavailable right now. You can still enter the deal by hand.";
+const setupMessage = (localMessage) => (ON_RENDER ? UNAVAILABLE_MESSAGE : localMessage);
+
+// Turn SDK errors into plain messages (never include the key or Anthropic's raw error text).
 function sendApiError(res, err, hadPdf) {
   if (err instanceof Anthropic.AuthenticationError) {
-    return sendError(res, 401, "bad_key", "Anthropic rejected the API key. Check the key in .env (no quotes or spaces), save, and restart the server.");
+    return sendError(res, 401, "bad_key", setupMessage("Anthropic rejected the API key. Check the key in .env (no quotes or spaces), save, and restart the server."));
   }
   if (err instanceof Anthropic.PermissionDeniedError) {
-    return sendError(res, 403, "no_access", "This API key doesn't have access to the model. Check your Anthropic Console account.");
+    return sendError(res, 403, "no_access", setupMessage("This API key doesn't have access to the model. Check your Anthropic Console account."));
   }
   if (err instanceof Anthropic.RateLimitError) {
     return sendError(res, 429, "rate_limited", "Too many requests to Anthropic right now. Wait a minute and try again.");
@@ -313,7 +329,7 @@ function sendApiError(res, err, hadPdf) {
       return sendError(res, 400, "bad_pdf", "Claude couldn't read that PDF (it may be damaged, password-protected, or too long). Copy the teaser text and paste it instead.");
     }
     if (/credit|billing|balance/i.test(msg)) {
-      return sendError(res, 402, "billing", "Your Anthropic account is out of credit. Add credit in the Anthropic Console and try again.");
+      return sendError(res, 402, "billing", setupMessage("Your Anthropic account is out of credit (or hit its spend limit). Add credit in the Anthropic Console and try again."));
     }
     return sendError(res, 400, "api_bad_request", "Anthropic couldn't process this request. Try again, or paste the teaser text instead.");
   }
@@ -325,19 +341,21 @@ function sendApiError(res, err, hadPdf) {
     return sendError(res, 502, "api_error", `Anthropic returned an error (${status}). It may be busy; try again in a minute.`);
   }
   console.error("Unexpected error while calling Claude:", err && err.name);
-  return sendError(res, 500, "server_error", "Something went wrong on the SearchDesk server. Check the terminal and try again.");
+  return sendError(res, 500, "server_error", "Something went wrong on the SearchDesk server. Try again.");
 }
 
 // ----- Server -----
 const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
   try {
-    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
+    // Only the path matters; exact matches below mean no other file on the server can ever be served.
+    // (This used to parse the Host header outside the try, and a malformed Host crashed the server.)
+    const pathname = String(req.url || "/").split("?")[0];
+    if (req.method === "GET" && (pathname === "/" || pathname === "/index.html")) {
       const html = fs.readFileSync(path.join(ROOT, "app", "index.html"));
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+      res.writeHead(200, { ...SECURITY_HEADERS, "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
       return res.end(html);
     }
-    if (url.pathname === "/api/extract") {
+    if (pathname === "/api/extract") {
       if (req.method !== "POST") return sendError(res, 405, "method", "Use POST.");
       return await handleExtract(req, res);
     }
@@ -347,6 +365,10 @@ const server = http.createServer(async (req, res) => {
     if (!res.headersSent) sendError(res, 500, "server_error", "Something went wrong on the SearchDesk server.");
   }
 });
+
+// Give up on uploads that drag on (slow-upload attacks hold connections open to tie up the server).
+server.requestTimeout = 120_000; // whole request, including a 5 MB upload on a slow connection
+server.headersTimeout = 20_000;
 
 server.listen(PORT, HOST, () => {
   console.log(ON_RENDER
