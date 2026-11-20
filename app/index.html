@@ -7,9 +7,10 @@
   <!-- Favicon: the same desk logo as the header, as an inline SVG data URI -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='%232f7d4f'%3E%3Crect x='10' y='7' width='13' height='9' rx='1.5'/%3E%3Crect x='8' y='16.4' width='17' height='2.1' rx='1'/%3E%3Crect x='2.5' y='19' width='27' height='3.2' rx='1.6'/%3E%3Crect x='5.5' y='21' width='3' height='9' rx='1.2'/%3E%3Crect x='23.5' y='21' width='3' height='9' rx='1.2'/%3E%3C/g%3E%3Crect x='11.8' y='8.8' width='9.4' height='5.6' rx='.6' fill='%23fff'/%3E%3C/svg%3E" />
   <!--
-    SearchDesk local prototype (Build 1).
+    SearchDesk prototype.
     One self-contained file: plain HTML, CSS, and JavaScript. No libraries, no API keys.
-    Deals, buy box, and assumptions are saved in this browser's localStorage.
+    Financial numbers come only from the approved Excel template, calculated by the server (POST /api/model).
+    Deals, buy box, and My assumptions are saved in this browser's localStorage.
   -->
   <style>
     :root {
@@ -117,34 +118,8 @@
       background: var(--bg); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: var(--radius);
       padding: 18px; align-self: start; position: sticky; top: 12px;
     }
-    .fin-inputs { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); gap: 6px 8px; align-items: center; font-size: 13px; }
-    .fin-inputs .hdr { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
-    .fin-inputs input[type="number"] { padding: 5px 6px; font-size: 13px; }
-    .fin-inputs .src { font-weight: 600; }
-    .fin-inputs .na { color: var(--muted); text-align: center; }
-    .standby { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; font-size: 13px; margin: -2px 0 4px; }
-    .pct-total { font-size: 13px; margin-top: 8px; color: var(--muted); }
-    .pct-total.bad { color: var(--bad); font-weight: 600; }
-    .stack-bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; margin: 8px 0; background: var(--neutral-bg); }
-    .stack-bar span { display: block; height: 100%; }
-    .src-sba { background: #2f7d4f; }
-    .src-seller { background: #d49a3a; }
-    .src-buyer { background: #7fbf95; }
-    .src-investor { background: #6b7f99; }
-    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
     .table-wrap { overflow-x: auto; }
-    table.sources { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; }
-    table.sources th, table.sources td { padding: 4px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    table.sources th:first-child, table.sources td:first-child { text-align: left; white-space: normal; }
-    table.sources th { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
-    table.sources tfoot td { font-weight: 700; border-bottom: none; }
     .sub { display: block; font-size: 11px; color: var(--muted); font-weight: 400; }
-    .verdict { font-weight: 700; font-size: 16px; padding: 8px 12px; border-radius: 8px; margin-top: 12px; }
-    .verdict-dig { background: var(--good-bg); color: var(--good); border: 1px solid var(--good-border); }
-    .verdict-pass { background: var(--bad-bg); color: var(--bad); border: 1px solid var(--bad-border); }
-    .verdict-none { background: var(--neutral-bg); color: var(--muted); border: 1px solid var(--border); font-weight: 600; font-size: 14px; }
-    .reasons { margin: 8px 0 0; padding-left: 18px; font-size: 14px; }
-    .reasons li { margin-bottom: 4px; }
     .checklist { list-style: none; margin: 0; padding: 0; font-size: 14px; }
     .checklist li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px dashed var(--border); }
     .checklist li:last-child { border-bottom: none; }
@@ -160,6 +135,37 @@
     .est-badge { font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0; background: var(--warn-bg); color: var(--warn); padding: 1px 7px; border-radius: 999px; }
     .disclaimer { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
     .save-box { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 14px; }
+
+    /* My assumptions (inputs for the approved financial model template) */
+    .assume-body { margin-top: 16px; }
+    .assume-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 22px; }
+    .assume-grid h3 { color: var(--accent-dark); margin-bottom: 10px; }
+    .assume-grid .field label { font-weight: 500; }
+    .assume-grid .row2 { align-items: end; } /* keep inputs lined up when a label wraps */
+    .unit { display: flex; align-items: center; gap: 6px; }
+    .unit span { font-size: 13px; color: var(--muted); min-width: 14px; }
+    .equity-line { font-size: 14px; padding: 8px 10px; border-radius: 8px; background: var(--accent-soft); border: 1px solid var(--good-border); margin: 4px 0 12px; }
+    .equity-line.bad { background: var(--bad-bg); border-color: var(--bad-border); color: var(--bad); font-weight: 600; }
+    .assume-status { font-size: 13px; margin: 0 0 12px; }
+    .assume-status:empty { display: none; }
+    .assume-status.error { color: var(--bad); }
+
+    /* Financial model panel (numbers come only from the approved Excel template) */
+    .model-panel { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 14px; }
+    .model-panel h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .src-badge { font-size: 11px; font-weight: 600; background: var(--neutral-bg); color: var(--muted); padding: 1px 7px; border-radius: 999px; }
+    .model-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+    .model-status { font-size: 13px; margin: 6px 0; }
+    .model-status:empty { display: none; }
+    .model-status.error { color: var(--bad); background: var(--bad-bg); border: 1px solid var(--bad-border); border-radius: 8px; padding: 8px 10px; }
+    .model-status.stale { color: var(--warn); background: var(--warn-bg); border-radius: 8px; padding: 8px 10px; }
+    .model-results.stale { opacity: 0.45; }
+    table.model { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 10px; }
+    table.model th, table.model td { padding: 5px 4px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    table.model th:first-child, table.model td:first-child { text-align: left; white-space: normal; color: var(--muted); }
+    table.model thead th { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
+    .check-ok { color: var(--good); font-weight: 600; }
+    .check-bad { color: var(--bad); font-weight: 600; }
     .form-msg { font-size: 13px; margin-top: 8px; min-height: 18px; }
     .form-msg.error { color: var(--bad); }
     .form-msg.ok { color: var(--good); }
@@ -211,8 +217,6 @@
     .badge.sample { background: var(--neutral-bg); color: var(--muted); }
     .card-row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 8px 0; }
     .chip { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
-    .chip.dig { background: var(--good-bg); color: var(--good); border: 1px solid var(--good-border); }
-    .chip.pass { background: var(--bad-bg); color: var(--bad); border: 1px solid var(--bad-border); }
     .chip.fit { background: var(--neutral-bg); color: var(--text); }
     .next { font-size: 13px; padding: 6px 10px; background: var(--bg); border-radius: 8px; }
     .next.overdue { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
@@ -222,7 +226,7 @@
     .empty-note { margin: 0; }
 
     @media (max-width: 860px) {
-      .add-grid { grid-template-columns: 1fr; }
+      .add-grid, .assume-grid { grid-template-columns: 1fr; }
       .screen-panel { position: static; }
     }
     @media (max-width: 520px) {
@@ -230,7 +234,7 @@
       section { padding: 18px 16px; }
     }
   </style>
-  <!-- PostHog analytics (US cloud). Pageviews, clicks, session replay, and 3 custom events (see track() below).
+  <!-- PostHog analytics (US cloud). Pageviews, clicks, session replay, and 5 custom events (see track() below).
        The phc_ project key is PostHog's public, write-only key: safe in web pages (not a secret). -->
   <script>
     !function(t,e){var o,n,p,r;e.__SV||(window.posthog&&window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags on onFeatureFlags onSessionId identify setPersonProperties group resetGroups reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
@@ -269,8 +273,9 @@
       <p class="tagline">Every deal, from brokers or direct outreach, captured, screened, and moved forward in one pipeline.</p>
       <div class="cta-row">
         <a class="btn btn-secondary" href="#buybox">1. Buy box</a>
-        <a class="btn" href="#add">2. Add a deal</a>
-        <a class="btn btn-secondary" href="#pipeline">3. Pipeline</a>
+        <a class="btn btn-secondary" href="#assumptions">2. My assumptions</a>
+        <a class="btn" href="#add">3. Add a deal</a>
+        <a class="btn btn-secondary" href="#pipeline">4. Pipeline</a>
       </div>
       <p class="meta">Data is saved in this browser only. All numbers are rough estimates for screening, not financial or investment advice.</p>
     </header>
@@ -309,16 +314,6 @@
               <input type="text" id="bb-ebitda-max" inputmode="decimal" />
             </div>
           </div>
-          <div class="row2">
-            <div class="field">
-              <label for="bb-sde-mult">Flag price / SDE above <span class="hint">(x)</span></label>
-              <input type="number" id="bb-sde-mult" min="0" step="0.1" />
-            </div>
-            <div class="field">
-              <label for="bb-ebitda-mult">Flag price / EBITDA above <span class="hint">(x; usually higher than SDE)</span></label>
-              <input type="number" id="bb-ebitda-mult" min="0" step="0.1" />
-            </div>
-          </div>
           <div class="field">
             <span class="label">Seller situation <span class="hint">(preference)</span></span>
             <div class="checks"><label><input type="checkbox" id="bb-retiring" /> Prefer a retiring owner</label></div>
@@ -332,9 +327,62 @@
       </details>
     </section>
 
-    <!-- 2. ADD A DEAL + INSTANT SCREEN -->
+    <!-- 2. MY ASSUMPTIONS: inputs for the approved financial model template (model/searchdesk-model-template.xlsx) -->
+    <section id="assumptions">
+      <details>
+        <summary><h2>2. My assumptions</h2><span id="as-summary" class="meta ph-mask"></span></summary>
+        <div class="assume-body">
+          <p class="meta" style="margin-top:0">These go into your approved Excel model (Assumptions sheet) for every deal. Set them once; they're saved in this browser. Defaults come from the template.</p>
+          <div class="assume-status" id="as-status" role="status"></div>
+          <div class="assume-grid">
+            <div>
+              <h3>Financing</h3>
+              <div class="field">
+                <span class="label">Senior loan is SBA 7(a)?</span>
+                <div class="seg">
+                  <label><input type="radio" name="as-seniorIsSba" value="Yes" /> Yes</label>
+                  <label><input type="radio" name="as-seniorIsSba" value="No" /> No</label>
+                </div>
+              </div>
+              <div class="row2">
+                <div class="field"><label for="as-seniorPct">Senior loan (% of total uses)</label><div class="unit"><input type="number" id="as-seniorPct" data-kind="pct" step="1" min="0" max="100" /><span>%</span></div></div>
+                <div class="field"><label for="as-seniorRate">Senior loan rate (annual)</label><div class="unit"><input type="number" id="as-seniorRate" data-kind="pct" step="0.25" min="0" max="30" /><span>%</span></div></div>
+              </div>
+              <div class="field"><label for="as-seniorTerm">Senior loan term</label><div class="unit"><input type="number" id="as-seniorTerm" data-kind="years" step="1" min="1" max="30" /><span>yrs</span></div></div>
+              <div class="row2">
+                <div class="field"><label for="as-sellerPct">Seller note (% of total uses)</label><div class="unit"><input type="number" id="as-sellerPct" data-kind="pct" step="1" min="0" max="100" /><span>%</span></div></div>
+                <div class="field"><label for="as-sellerRate">Seller note rate (annual)</label><div class="unit"><input type="number" id="as-sellerRate" data-kind="pct" step="0.25" min="0" max="30" /><span>%</span></div></div>
+              </div>
+              <div class="row2">
+                <div class="field"><label for="as-sellerStandby">Seller note standby (years, no payments)</label><div class="unit"><input type="number" id="as-sellerStandby" data-kind="years" step="1" min="0" max="10" /><span>yrs</span></div></div>
+                <div class="field"><label for="as-sellerAmort">Seller note amortization (years after standby)</label><div class="unit"><input type="number" id="as-sellerAmort" data-kind="years" step="1" min="1" max="30" /><span>yrs</span></div></div>
+              </div>
+              <div class="field"><label for="as-investorPct">Investor equity (% of total uses) <span class="hint">(Investor 1; add more investors in Excel)</span></label><div class="unit"><input type="number" id="as-investorPct" data-kind="pct" step="1" min="0" max="100" /><span>%</span></div></div>
+              <div class="equity-line" id="as-equity" role="status"></div>
+            </div>
+            <div>
+              <h3>Deal costs</h3>
+              <div class="field"><label for="as-closingCostPct">Closing costs (% of purchase price)</label><div class="unit"><input type="number" id="as-closingCostPct" data-kind="pct" step="0.5" min="0" max="25" /><span>%</span></div></div>
+              <div class="field"><label for="as-cushionMonths">Extra cash cushion (months of operating expenses)</label><div class="unit"><input type="number" id="as-cushionMonths" data-kind="number" step="0.5" min="0" max="24" /><span>mo</span></div></div>
+              <div class="field"><label for="as-sbaFeePct">SBA guarantee fee (% of senior loan, if SBA)</label><div class="unit"><input type="number" id="as-sbaFeePct" data-kind="pct" step="0.25" min="0" max="10" /><span>%</span></div></div>
+            </div>
+            <div>
+              <h3>Operating</h3>
+              <div class="field"><label for="as-buyerSalary">Your salary ($/yr)</label><div class="unit"><span>$</span><input type="number" id="as-buyerSalary" data-kind="money" step="5000" min="0" max="2000000" /></div></div>
+              <div class="field"><label for="as-capexPct">Maintenance capex (% of revenue)</label><div class="unit"><input type="number" id="as-capexPct" data-kind="pct" step="0.5" min="0" max="50" /><span>%</span></div></div>
+              <div class="field"><label for="as-taxRate">Tax rate</label><div class="unit"><input type="number" id="as-taxRate" data-kind="pct" step="1" min="0" max="60" /><span>%</span></div></div>
+              <div class="field"><label for="as-targetDscr">Target DSCR (minimum you or your lender accept)</label><div class="unit"><input type="number" id="as-targetDscr" data-kind="number" step="0.05" min="0.5" max="5" /><span>x</span></div></div>
+              <div class="field"><label for="as-targetIrr">Target equity return (IRR)</label><div class="unit"><input type="number" id="as-targetIrr" data-kind="pct" step="1" min="0" max="200" /><span>%</span></div></div>
+            </div>
+          </div>
+          <button type="button" class="btn-link" id="as-reset">Reset assumptions to the template's defaults</button>
+        </div>
+      </details>
+    </section>
+
+    <!-- 3. ADD A DEAL + INSTANT SCREEN -->
     <section id="add">
-      <div class="section-head"><h2 id="form-title" class="ph-mask">2. Add a deal</h2><span class="meta">The screen on the right updates as you type.</span></div>
+      <div class="section-head"><h2 id="form-title" class="ph-mask">3. Add a deal</h2><span class="meta">The screen on the right updates as you type.</span></div>
 
       <!-- AI teaser reading: needs the local server (npm start) -->
       <div class="teaser-box" id="teaser-box">
@@ -422,6 +470,10 @@
                 <input type="text" id="f-revenue" inputmode="decimal" placeholder="e.g., 3.9M" />
               </div>
             </div>
+            <div class="field">
+              <label for="f-offer">Your offer price <span class="hint">(optional; leave blank to model the asking price)</span></label>
+              <input type="text" id="f-offer" inputmode="decimal" placeholder="e.g., 2.2M" />
+            </div>
             <div class="field" id="replace-owner-row" hidden>
               <div class="checks"><label><input type="checkbox" id="f-replace-owner" /> I'll replace the owner and EBITDA doesn't cover a manager (subtract my salary)</label></div>
             </div>
@@ -443,35 +495,19 @@
 
           <aside class="screen-panel ph-mask">
             <h3>Instant screen</h3>
-            <div class="field">
-              <label for="a-salary">Your salary ($/yr) <span class="hint">(used for DSCR on every deal)</span></label>
-              <input type="text" id="a-salary" inputmode="decimal" />
-            </div>
-            <h4>Financing <span class="est-badge">saved with this deal</span></h4>
-            <div class="fin-inputs">
-              <span class="hdr">Source</span><span class="hdr">% of price</span><span class="hdr">Rate %</span><span class="hdr">Term yrs</span>
-
-              <span class="src">SBA 7(a) loan</span>
-              <input type="number" id="fin-sba-pct" min="0" max="100" step="1" aria-label="SBA loan, percent of price" />
-              <input type="number" id="fin-sba-rate" min="0" step="0.25" aria-label="SBA loan interest rate" />
-              <input type="number" id="fin-sba-term" min="1" step="1" aria-label="SBA loan term in years" />
-
-              <span class="src">Seller note</span>
-              <input type="number" id="fin-sn-pct" min="0" max="100" step="1" aria-label="Seller note, percent of price" />
-              <input type="number" id="fin-sn-rate" min="0" step="0.25" aria-label="Seller note interest rate" />
-              <input type="number" id="fin-sn-term" min="1" step="1" aria-label="Seller note term in years" />
-              <label class="standby"><input type="checkbox" id="fin-sn-standby" /> Seller note on standby (no payments in the early years)</label>
-
-              <span class="src">Buyer equity <span class="sub">your cash</span></span>
-              <input type="number" id="fin-buyer-pct" min="0" max="100" step="1" aria-label="Buyer equity, percent of price" />
-              <span class="na">–</span><span class="na">–</span>
-
-              <span class="src">Outside investors</span>
-              <input type="number" id="fin-inv-pct" min="0" max="100" step="1" aria-label="Outside investor equity, percent of price" />
-              <span class="na">–</span><span class="na">–</span>
-            </div>
-            <div class="pct-total" id="pct-total"></div>
             <div id="screen"></div>
+
+            <!-- Financial model: every number here comes from the approved Excel template, calculated on the server -->
+            <div class="model-panel" id="model-panel">
+              <h3>Financial model <span class="src-badge">from your approved Excel template</span></h3>
+              <p class="meta" style="margin:0">Review the deal's numbers first, then run your model with <a href="#assumptions" id="as-link">My assumptions</a>.</p>
+              <div class="model-actions">
+                <button type="button" class="btn" id="m-run">Run financial model</button>
+                <button type="button" class="btn btn-secondary" id="m-download" disabled>Download Excel model</button>
+              </div>
+              <div class="model-status" id="m-status" role="status"></div>
+              <div class="model-results" id="m-results"></div>
+            </div>
 
             <div class="save-box">
               <h3>Save to pipeline</h3>
@@ -498,10 +534,10 @@
       </form>
     </section>
 
-    <!-- 3. PIPELINE -->
+    <!-- 4. PIPELINE -->
     <section id="pipeline">
       <div class="section-head">
-        <h2>3. Pipeline</h2>
+        <h2>4. Pipeline</h2>
         <span id="pipe-summary" class="meta"></span>
         <button type="button" class="btn-link" id="reset-samples">Reload sample deals</button>
       </div>
@@ -528,24 +564,20 @@
       sdeMax: 1000000,
       ebitdaMin: 400000,  // roughly the SDE range minus a manager's pay
       ebitdaMax: 900000,
-      sdeHighMultiple: 4.5,    // flag asking prices above this multiple of SDE
-      ebitdaHighMultiple: 5.5, // EBITDA multiples typically run higher
       preferRetiring: true,
       growth: ["Flat", "Slow growth"] // "slow / steady"
     };
-    const DEFAULT_ASSUMPTIONS = { salary: 100000 };
-    // Common structure: 80% SBA, 10% seller note, 10% buyer equity. All % are of purchase price.
-    const DEFAULT_FINANCING = {
-      sbaPct: 80, sbaRate: 10.5, sbaTerm: 10,
-      sellerPct: 10, sellerRate: 7, sellerTerm: 5, sellerStandby: false,
-      buyerPct: 10, investorPct: 0
-    };
 
-    const TARGET_DSCR = 1.25;   // coverage lenders commonly look for
+    // "My assumptions" for the approved financial model template. Values use the template's own units
+    // (percentages as fractions: 0.8 = 80%). There are no defaults in this file: they come from the
+    // template via GET /api/model/defaults.
+    const ASSUMPTION_KEYS = ["seniorIsSba", "seniorPct", "seniorRate", "seniorTerm", "sellerPct", "sellerRate",
+      "sellerStandby", "sellerAmort", "investorPct", "closingCostPct", "cushionMonths", "sbaFeePct",
+      "buyerSalary", "capexPct", "taxRate", "targetDscr", "targetIrr"];
 
     const DEAL_KEY = "searchdesk.deals.v1";
     const BB_KEY = "searchdesk.buybox.v1";
-    const ASSUME_KEY = "searchdesk.assumptions.v1";
+    const MODEL_ASSUME_KEY = "searchdesk.model-assumptions.v1";
 
     // ================= Small helpers =================
     function load(key, fallback) {
@@ -590,17 +622,8 @@
     function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
     // ================= Screening logic (no page code here) =================
-    function monthlyPayment(principal, ratePct, years) {
-      const r = ratePct / 100 / 12, n = years * 12;
-      return r === 0 ? principal / n : principal * r / (1 - Math.pow(1 + r, -n));
-    }
-    function annualPayment(principal, ratePct, years) {
-      return years > 0 ? monthlyPayment(principal, ratePct, years) * 12 : 0;
-    }
-    // Deals saved before financing existed fall back to the default structure.
-    function getFinancing(deal) {
-      return Object.assign({}, DEFAULT_FINANCING, deal.financing || {});
-    }
+    // Only the buy box check lives here. All financial numbers come from the approved Excel template
+    // (calculated on the server by POST /api/model); there is no financial math in this page.
 
     // Earnings type and amount. Deals saved before EBITDA support only have `sde`.
     function earningsOf(deal) {
@@ -610,52 +633,6 @@
     }
     function sizeRange(type, bb) {
       return type === "EBITDA" ? { min: bb.ebitdaMin, max: bb.ebitdaMax } : { min: bb.sdeMin, max: bb.sdeMax };
-    }
-    function highMultiple(type, bb) {
-      return type === "EBITDA" ? bb.ebitdaHighMultiple : bb.sdeHighMultiple;
-    }
-
-    function financialRead(deal, a) {
-      const f = getFinancing(deal);
-      const out = { financing: f };
-      const e = earningsOf(deal);
-      const sde = e.amount, price = deal.askingPrice; // `sde` = earnings of either type below
-      out.earningsType = e.type;
-      out.earnings = e.amount;
-      // SDE includes the owner's pay, so subtract the buyer's salary. EBITDA usually already
-      // reflects a manager's pay, so only subtract it if the buyer says it doesn't.
-      out.salaryApplied = e.type === "SDE" || !!deal.replaceOwner;
-      out.pctTotal = f.sbaPct + f.sellerPct + f.buyerPct + f.investorPct;
-      if (sde != null) out.cashForDebt = sde - (out.salaryApplied ? a.salary : 0);
-      if (sde != null && deal.revenue) out.margin = sde / deal.revenue;
-      if (price && sde > 0) out.multiple = price / sde;
-
-      // Annual loan payment for every $1 of purchase price
-      const sbaPerDollar = f.sbaPct / 100 * annualPayment(1, f.sbaRate, f.sbaTerm);
-      const sellerPerDollar = f.sellerPct / 100 * annualPayment(1, f.sellerRate, f.sellerTerm);
-      const servicedPerDollar = sbaPerDollar + (f.sellerStandby ? 0 : sellerPerDollar);
-
-      if (price) {
-        out.sources = [
-          { key: "sba", label: "SBA 7(a) loan", pct: f.sbaPct },
-          { key: "seller", label: "Seller note", pct: f.sellerPct },
-          { key: "buyer", label: "Buyer equity", pct: f.buyerPct },
-          { key: "investor", label: "Outside investors", pct: f.investorPct }
-        ].map(s => Object.assign(s, { amount: price * s.pct / 100 }));
-        out.sbaAnnual = price * sbaPerDollar;
-        out.sellerAnnual = price * sellerPerDollar;
-        out.annualDebt = price * servicedPerDollar; // excludes seller note when on standby
-        out.buyerCash = price * f.buyerPct / 100;
-        if (sde != null && out.annualDebt > 0) out.dscr = out.cashForDebt / out.annualDebt;
-        if (sde != null && f.sellerStandby && out.sellerAnnual > 0) {
-          out.dscrAfterStandby = out.cashForDebt / (out.sbaAnnual + out.sellerAnnual);
-        }
-      }
-      // Highest price that keeps DSCR at the target with this financing structure.
-      if (sde != null && out.cashForDebt > 0 && servicedPerDollar > 0) {
-        out.maxPrice = out.cashForDebt / TARGET_DSCR / servicedPerDollar;
-      }
-      return out;
     }
 
     function buyBoxChecks(deal, bb) {
@@ -677,78 +654,17 @@
       ];
     }
 
-    // Returns the checklist, financial read, fit count, verdict ("Dig deeper" / "Pass" / null), and 2–3 reasons.
-    function screenDeal(deal, bb, a) {
+    // Returns the buy box checklist and how many of the 5 checks fit.
+    function screenDeal(deal, bb) {
       const checks = buyBoxChecks(deal, bb);
-      const fin = financialRead(deal, a);
-      const fitCount = checks.filter(c => c.status === "pass").length;
-      if (checks.some(c => c.must && c.status === "unknown")) {
-        return { checks, fin, fitCount, verdict: null, reasons: ["Enter industry, state, and earnings (SDE or EBITDA) to get a suggested verdict."] };
-      }
-
-      const neg = [], pos = [];
-      let pass = false;
-      const byKey = k => checks.find(c => c.key === k);
-
-      // Must-haves
-      if (byKey("industry").status === "fail") { pass = true; neg.push(`${deal.industry} is outside your target industries.`); }
-      if (byKey("location").status === "fail") { pass = true; neg.push(`It's in ${deal.state}, outside your target states.`); }
-      if (byKey("size").status === "fail") {
-        pass = true;
-        const type = fin.earningsType, range = sizeRange(type, bb);
-        neg.push(`${type} of ${moneyShort(fin.earnings)} is ${fin.earnings < range.min ? "below" : "above"} your ${moneyShort(range.min)}–${moneyShort(range.max)} ${type} range.`);
-      }
-      if (!pass) pos.push("Fits your industry, location, and size targets.");
-
-      // Financing
-      const cf = fin.salaryApplied ? "cash flow after your salary" : `${fin.earningsType} (no salary deducted)`;
-      const Cf = cf.charAt(0).toUpperCase() + cf.slice(1);
-      if (fin.cashForDebt != null && fin.cashForDebt <= 0) {
-        pass = true;
-        neg.push(`${fin.earningsType} doesn't leave anything for loan payments${fin.salaryApplied ? ` after your ${moneyShort(a.salary)} salary` : ""}.`);
-      } else if (fin.dscr != null) {
-        if (fin.dscr < TARGET_DSCR) {
-          pass = true;
-          neg.push(`At the asking price, ${cf} covers estimated debt service only ${fin.dscr.toFixed(2)}x, below the ~${TARGET_DSCR}x lenders usually look for.`);
-        } else {
-          pos.push(`${Cf} covers estimated debt service ${fin.dscr.toFixed(2)}x (lenders usually look for ~${TARGET_DSCR}x).`);
-          if (fin.dscrAfterStandby != null && fin.dscrAfterStandby < TARGET_DSCR) {
-            neg.push(`Once seller note payments start, coverage drops to ${fin.dscrAfterStandby.toFixed(2)}x.`);
-          }
-        }
-      } else if (fin.maxPrice) {
-        pos.push(`No asking price yet. To keep loan coverage at ${TARGET_DSCR}x, the price would need to be about ${moneyShort(fin.maxPrice)} or less.`);
-      }
-      const limit = highMultiple(fin.earningsType, bb);
-      if (fin.multiple != null && fin.multiple > limit) {
-        neg.push(`Asking ${fin.multiple.toFixed(1)}x ${fin.earningsType} is above your ${limit}x flag for ${fin.earningsType} multiples.`);
-      }
-
-      // Growth
-      if (deal.growth === "Declining") {
-        pass = true;
-        neg.push("Revenue is declining, which makes the cash flow harder to count on.");
-      } else if (byKey("growth").status === "fail") {
-        neg.push(`${deal.growth} doesn't match your growth preference${deal.growth === "Fast growth" ? "; check whether the price already assumes it continues" : ""}.`);
-      } else if (byKey("growth").status === "pass") {
-        pos.push(`${deal.growth} matches your preference for steady growth.`);
-      }
-
-      // Seller
-      if (bb.preferRetiring && byKey("seller").status === "pass") pos.push("The owner is retiring, which matches your preferred seller situation.");
-      if (byKey("seller").status === "fail") neg.push("The owner isn't retiring, so ask why they're selling.");
-
-      const verdict = pass ? "Pass" : "Dig deeper";
-      // Pass: lead with the problems. Dig deeper: lead with the strengths, then one thing to check.
-      const ordered = pass ? neg.concat(pos) : pos.slice(0, 2).concat(neg, pos.slice(2));
-      return { checks, fin, fitCount, verdict, reasons: ordered.slice(0, 3) };
+      return { checks, fitCount: checks.filter(c => c.status === "pass").length };
     }
 
     // ================= Sample data (fictional) =================
     function sampleDeals() {
       return [
         {
-          id: "sample-1", sample: true, financing: Object.assign({}, DEFAULT_FINANCING), channel: "Broker", name: "Harbor Line Commercial Cleaning",
+          id: "sample-1", sample: true, channel: "Broker", name: "Harbor Line Commercial Cleaning",
           industry: "Commercial services", description: "Commercial cleaning", state: "MA",
           contactName: "Dana Reyes", contactRole: "Broker", link: "",
           askingPrice: 2400000, earningsType: "EBITDA", earnings: 650000, replaceOwner: false,
@@ -758,7 +674,7 @@
           dueDate: addDaysISO(-2), createdAt: addDaysISO(-9)
         },
         {
-          id: "sample-2", sample: true, financing: Object.assign({}, DEFAULT_FINANCING), channel: "Broker", name: "Sunbelt Pool & Patio Services",
+          id: "sample-2", sample: true, channel: "Broker", name: "Sunbelt Pool & Patio Services",
           industry: "Home services", description: "Residential pool service", state: "FL",
           contactName: "Marcus Hale", contactRole: "Broker", link: "",
           askingPrice: 3800000, earningsType: "SDE", earnings: 820000, revenue: 4100000, growth: "Fast growth", saleReason: "Other",
@@ -767,7 +683,7 @@
           dueDate: addDaysISO(0), createdAt: addDaysISO(-3)
         },
         {
-          id: "sample-3", sample: true, financing: Object.assign({}, DEFAULT_FINANCING), channel: "Direct outreach", name: "Keystone Fire & Safety Inspections",
+          id: "sample-3", sample: true, channel: "Direct outreach", name: "Keystone Fire & Safety Inspections",
           industry: "B2B services", description: "Fire safety inspections", state: "PA",
           contactName: "Walt Brenner", contactRole: "Owner", link: "",
           askingPrice: null, earningsType: "SDE", earnings: 600000, revenue: 2200000, growth: "Flat", saleReason: "Retiring",
@@ -781,7 +697,9 @@
     // ================= Page code =================
     let deals = [];
     let buyBox = {};
-    let assumptions = {};
+    let assumptions = null; // "My assumptions" (template units); null until loaded from storage or the template
+    let modelResult = null; // last headline numbers from the template, plus the inputs they were run with
+    let modelError = null;  // message from the last failed run or download, shown until the next try
     let editingId = null;
     let aiFilledThisDeal = false; // for analytics: was the teaser reader used on the deal being saved?
 
@@ -813,8 +731,6 @@
       $("bb-sde-max").value = money(buyBox.sdeMax);
       $("bb-ebitda-min").value = money(buyBox.ebitdaMin);
       $("bb-ebitda-max").value = money(buyBox.ebitdaMax);
-      $("bb-sde-mult").value = buyBox.sdeHighMultiple;
-      $("bb-ebitda-mult").value = buyBox.ebitdaHighMultiple;
       $("bb-retiring").checked = buyBox.preferRetiring;
       $("bb-states-note").textContent = "";
       renderBuyBoxSummary();
@@ -838,7 +754,6 @@
       $("bb-states-note").textContent = unknown.length ? "Not recognized: " + unknown.join(", ") : "";
       // Keep the previous value if a box is empty or not a number
       const moneyOr = (id, prev) => { const v = num(parseMoney($(id).value)); return v != null ? v : prev; };
-      const multOr = (id, prev) => { const v = parseFloat($(id).value); return Number.isFinite(v) && v > 0 ? v : prev; };
       buyBox = {
         industries: checked("#bb-industries"),
         states: [...new Set(tokens.filter(t => STATES.includes(t)))],
@@ -846,8 +761,6 @@
         sdeMax: moneyOr("bb-sde-max", buyBox.sdeMax),
         ebitdaMin: moneyOr("bb-ebitda-min", buyBox.ebitdaMin),
         ebitdaMax: moneyOr("bb-ebitda-max", buyBox.ebitdaMax),
-        sdeHighMultiple: multOr("bb-sde-mult", buyBox.sdeHighMultiple),
-        ebitdaHighMultiple: multOr("bb-ebitda-mult", buyBox.ebitdaHighMultiple),
         preferRetiring: $("bb-retiring").checked,
         growth: checked("#bb-growth")
       };
@@ -868,42 +781,15 @@
         channel: document.querySelector('input[name="channel"]:checked').value,
         name: v("f-name"), industry: v("f-industry"), description: v("f-desc"), state: v("f-state"),
         contactName: v("f-contact"), contactRole: v("f-role"), link: v("f-link"),
-        askingPrice: num(parseMoney(v("f-price"))), revenue: num(parseMoney(v("f-revenue"))),
+        askingPrice: num(parseMoney(v("f-price"))), offerPrice: num(parseMoney(v("f-offer"))),
+        revenue: num(parseMoney(v("f-revenue"))),
         earningsType: document.querySelector('input[name="earningsType"]:checked').value,
         earnings: num(parseMoney(v("f-earnings"))),
         replaceOwner: $("f-replace-owner").checked,
         growth: v("f-growth"), saleReason: v("f-reason"), notes: $("f-notes").value,
-        stage: v("f-stage"), nextStep: v("f-next"), dueDate: v("f-due"),
-        financing: readFinancing()
+        stage: v("f-stage"), nextStep: v("f-next"), dueDate: v("f-due")
       };
     }
-
-    function readFinancing() {
-      const D = DEFAULT_FINANCING;
-      const pct = id => { const v = parseFloat($(id).value); return Number.isFinite(v) && v >= 0 ? v : 0; };
-      const rate = (id, fb) => { const v = parseFloat($(id).value); return Number.isFinite(v) && v >= 0 ? v : fb; };
-      const term = (id, fb) => { const v = parseFloat($(id).value); return Number.isFinite(v) && v > 0 ? v : fb; };
-      return {
-        sbaPct: pct("fin-sba-pct"), sbaRate: rate("fin-sba-rate", D.sbaRate), sbaTerm: term("fin-sba-term", D.sbaTerm),
-        sellerPct: pct("fin-sn-pct"), sellerRate: rate("fin-sn-rate", D.sellerRate), sellerTerm: term("fin-sn-term", D.sellerTerm),
-        sellerStandby: $("fin-sn-standby").checked,
-        buyerPct: pct("fin-buyer-pct"), investorPct: pct("fin-inv-pct")
-      };
-    }
-
-    function setFinancingInputs(f) {
-      $("fin-sba-pct").value = f.sbaPct;
-      $("fin-sba-rate").value = f.sbaRate;
-      $("fin-sba-term").value = f.sbaTerm;
-      $("fin-sn-pct").value = f.sellerPct;
-      $("fin-sn-rate").value = f.sellerRate;
-      $("fin-sn-term").value = f.sellerTerm;
-      $("fin-sn-standby").checked = !!f.sellerStandby;
-      $("fin-buyer-pct").value = f.buyerPct;
-      $("fin-inv-pct").value = f.investorPct;
-    }
-
-    function pctOff(total) { return Math.abs(total - 100) > 0.01; }
 
     function updateChannelUI() {
       const direct = document.querySelector('input[name="channel"]:checked').value === "Direct outreach";
@@ -918,80 +804,217 @@
     }
 
     function renderScreen() {
-      const s = screenDeal(readForm(), buyBox, assumptions);
-      const f = s.fin;
-      const verdictHtml = s.verdict
-        ? `<div class="verdict ${s.verdict === "Pass" ? "verdict-pass" : "verdict-dig"}">Suggested: ${s.verdict}</div>`
-        : `<div class="verdict verdict-none">Suggested verdict: waiting for details</div>`;
-      const reasons = `<ul class="reasons">${s.reasons.map(r => `<li>${escapeHtml(r)}</li>`).join("")}</ul>`;
+      const s = screenDeal(readForm(), buyBox);
       const marks = { pass: "✓", fail: "✗", unknown: "–" };
-      const checklist = `<h4>Buy box check · ${s.fitCount}/5 fit</h4><ul class="checklist">` + s.checks.map(c =>
+      $("screen").innerHTML = `<h4 style="margin-top:4px">Buy box check · ${s.fitCount}/5 fit</h4><ul class="checklist">` + s.checks.map(c =>
         `<li class="${c.status}"><span><span class="mark">${marks[c.status]}</span>${c.label}${c.must ? "" : ' <span class="tag-pref">preference</span>'}</span><span class="detail">${escapeHtml(c.detail)}</span></li>`
       ).join("") + "</ul>";
+      updateModelPanel();
+    }
 
-      const fz = f.financing;
-      const dl = rows => `<dl class="fin">${rows.map(r => `<dt>${escapeHtml(r[0])}</dt><dd>${escapeHtml(r[1])}</dd>`).join("")}</dl>`;
+    // ----- My assumptions (saved in this browser; defaults come from the Excel template) -----
+    // Inputs show percentages as 0–100; the template (and storage) use fractions (0.8 = 80%).
+    const asInput = key => $("as-" + key);
+    const roundPct = x => Math.round(x * 1e6) / 1e4; // 0.105 -> 10.5 (avoids 10.500000000000002)
 
-      // Financing total check
-      const totalEl = $("pct-total");
-      if (pctOff(f.pctTotal)) {
-        totalEl.textContent = `Financing adds up to ${+f.pctTotal.toFixed(2)}%. It needs to total 100% (numbers below will be off).`;
-        totalEl.className = "pct-total bad";
+    function renderAssumptionsEditor() {
+      if (!assumptions) return;
+      document.querySelectorAll('input[name="as-seniorIsSba"]').forEach(r => { r.checked = r.value === assumptions.seniorIsSba; });
+      ASSUMPTION_KEYS.forEach(key => {
+        const el = asInput(key);
+        if (!el || el.type === "radio") return;
+        const v = assumptions[key];
+        el.value = v == null ? "" : el.dataset.kind === "pct" ? roundPct(v) : v;
+      });
+      renderAssumptionsSummary();
+    }
+
+    // Reads the form into `assumptions`. A box left empty or invalid keeps its previous value.
+    function readAssumptions() {
+      const next = Object.assign({}, assumptions);
+      const sba = document.querySelector('input[name="as-seniorIsSba"]:checked');
+      if (sba) next.seniorIsSba = sba.value;
+      ASSUMPTION_KEYS.forEach(key => {
+        const el = asInput(key);
+        if (!el || key === "seniorIsSba") return;
+        const raw = parseFloat(el.value);
+        if (!Number.isFinite(raw)) return;
+        next[key] = el.dataset.kind === "pct" ? raw / 100 : raw;
+      });
+      assumptions = next;
+    }
+
+    // Buyer equity is whatever the senior loan, seller note, and investors don't cover (the template's B36).
+    function buyerEquityPct() {
+      return 1 - (assumptions.seniorPct || 0) - (assumptions.sellerPct || 0) - (assumptions.investorPct || 0);
+    }
+
+    function renderAssumptionsSummary() {
+      if (!assumptions) return;
+      const eq = buyerEquityPct();
+      const el = $("as-equity");
+      el.textContent = eq < -1e-9
+        ? `Buyer equity (your cash): ${roundPct(eq)}% of total uses. That's negative: senior loan + seller note + investors add up to more than 100%. Lower one of them.`
+        : `Buyer equity (your cash): ${roundPct(eq)}% of total uses (100% minus the senior loan, seller note, and investors).`;
+      el.className = "equity-line" + (eq < -1e-9 ? " bad" : "");
+      const pct = k => roundPct(assumptions[k]) + "%";
+      $("as-summary").textContent = `${pct("seniorPct")} senior${assumptions.seniorIsSba === "Yes" ? " (SBA)" : ""} at ${pct("seniorRate")} · ` +
+        `${pct("sellerPct")} seller note · ${pct("investorPct")} investors · ${roundPct(eq)}% your cash · target DSCR ${assumptions.targetDscr}x (click to edit)`;
+    }
+
+    function onAssumptionsChange() {
+      readAssumptions();
+      store(MODEL_ASSUME_KEY, assumptions);
+      renderAssumptionsSummary();
+      updateModelPanel();
+    }
+
+    // Load saved assumptions, or the template's defaults from the server the first time.
+    async function loadAssumptions(forceDefaults) {
+      const saved = forceDefaults ? null : load(MODEL_ASSUME_KEY, null);
+      if (saved && ASSUMPTION_KEYS.every(k => saved[k] != null)) {
+        assumptions = saved;
       } else {
-        totalEl.textContent = "Total: 100% of purchase price.";
-        totalEl.className = "pct-total";
-      }
-
-      let finHtml = `<h4>Quick financial read <span class="est-badge">rough estimates</span></h4>`;
-      if (f.cashForDebt == null) {
-        finHtml += `<p class="meta">Enter earnings (SDE or EBITDA) to see the financial read.</p>`;
-      } else {
-        const top = [];
-        if (f.multiple != null) top.push([`Price / ${f.earningsType} multiple`, f.multiple.toFixed(1) + "x"]);
-        if (f.margin != null) top.push([`${f.earningsType} margin`, Math.round(f.margin * 100) + "%"]);
-        if (top.length) finHtml += dl(top);
-
-        if (f.sources) {
-          // Sources-of-funds bar + table
-          const bar = f.pctTotal > 0 ? f.sources.filter(s => s.pct > 0).map(s =>
-            `<span class="src-${s.key}" style="width:${(s.pct / f.pctTotal * 100).toFixed(2)}%" title="${escapeHtml(s.label)}: ${s.pct}%"></span>`).join("") : "";
-          const loanNote = { sba: `${fz.sbaRate}%, ${fz.sbaTerm} yr`, seller: `${fz.sellerRate}%, ${fz.sellerTerm} yr${fz.sellerStandby ? ", standby" : ""}` };
-          const payment = {
-            sba: money(f.sbaAnnual),
-            seller: fz.sellerStandby && f.sellerAnnual > 0 ? "Standby" : money(f.sellerAnnual),
-            buyer: "–", investor: "–"
-          };
-          const body = f.sources.map(s => `<tr>
-              <td><span class="dot src-${s.key}"></span>${escapeHtml(s.label)}${loanNote[s.key] ? `<span class="sub">${escapeHtml(loanNote[s.key])}</span>` : ""}</td>
-              <td>${s.pct}%</td><td>${money(s.amount)}</td><td>${payment[s.key]}</td></tr>`).join("");
-          const totalAmount = f.sources.reduce((sum, s) => sum + s.amount, 0);
-          finHtml += `<div class="stack-bar" role="img" aria-label="Sources of funds">${bar}</div>
-            <div class="table-wrap"><table class="sources">
-              <thead><tr><th>Source</th><th>%</th><th>Amount</th><th>Annual pmt</th></tr></thead>
-              <tbody>${body}</tbody>
-              <tfoot><tr><td>Total</td><td>${+f.pctTotal.toFixed(2)}%</td><td>${money(totalAmount)}</td><td>${money(f.annualDebt)}</td></tr></tfoot>
-            </table></div>`;
-        } else {
-          finHtml += `<p class="meta">Add an asking price to see sources of funds and loan payments.</p>`;
+        try {
+          const res = await fetch("/api/model/defaults");
+          const data = await res.json();
+          if (!res.ok || !data.assumptions) throw new Error("bad response");
+          assumptions = data.assumptions;
+          store(MODEL_ASSUME_KEY, assumptions);
+          $("as-status").textContent = "";
+        } catch (e) {
+          $("as-status").textContent = location.protocol === "file:"
+            ? "My assumptions and the financial model need the SearchDesk server. Run npm start, then open http://localhost:3000."
+            : "Couldn't load the template's default assumptions from the server. Reload the page to try again.";
+          $("as-status").className = "assume-status error";
         }
-
-        const rows = [];
-        if (f.annualDebt != null) rows.push([`Total annual debt service${fz.sellerStandby && f.sellerAnnual > 0 ? " (seller note excluded while on standby)" : ""}`, money(f.annualDebt)]);
-        rows.push([f.salaryApplied
-          ? `Cash flow after ${moneyShort(assumptions.salary)} salary (${f.earningsType} − salary)`
-          : "Cash flow for debt (EBITDA, no salary deducted)", money(f.cashForDebt)]);
-        if (f.dscr != null) rows.push(["Est. DSCR (debt coverage)", f.dscr.toFixed(2) + "x"]);
-        if (f.dscrAfterStandby != null) rows.push(["Est. DSCR once seller note payments start", f.dscrAfterStandby.toFixed(2) + "x"]);
-        if (f.buyerCash != null) rows.push(["Cash you put in (buyer equity)", money(f.buyerCash)]);
-        if (f.maxPrice) rows.push([`Max price at ${TARGET_DSCR}x DSCR (this structure)`, money(f.maxPrice)]);
-        finHtml += dl(rows);
       }
-      if (fz.buyerPct + fz.investorPct < 10) {
-        finHtml += `<p class="disclaimer">Note: SBA lenders usually want at least ~10% equity going in. A seller note on full standby can sometimes count toward it.</p>`;
-      }
-      finHtml += `<p class="disclaimer">Rough estimates for screening only, not financial or investment advice. Ignores taxes, capex, working capital, fees, closing costs, and SBA guarantee fees.</p>`;
+      renderAssumptionsEditor();
+      updateModelPanel();
+    }
 
-      $("screen").innerHTML = verdictHtml + reasons + checklist + finHtml;
+    // ----- Financial model panel: all numbers come from the approved Excel template (POST /api/model) -----
+    // The deal inputs the template takes (Assumptions sheet B5–B10, B18).
+    function modelDealInputs() {
+      const d = readForm();
+      return {
+        businessName: d.name || null,
+        earningsType: d.earningsType,
+        revenue: d.revenue,
+        earnings: d.earnings,
+        askingPrice: d.askingPrice,
+        offerPrice: d.offerPrice,
+        subtractSalary: d.earningsType === "EBITDA" && d.replaceOwner ? "Yes" : "No",
+      };
+    }
+    // What still has to be filled in before the model can run (empty list = ready).
+    function modelMissing(deal) {
+      const missing = [];
+      if (!assumptions) missing.push("My assumptions (start the server)");
+      if (!(deal.revenue > 0)) missing.push("revenue");
+      if (deal.earnings == null) missing.push(deal.earningsType);
+      if (!(deal.askingPrice > 0)) missing.push("asking price");
+      if (assumptions && buyerEquityPct() < -1e-9) missing.push("financing that adds up to 100% or less (see My assumptions)");
+      return missing;
+    }
+    const modelKey = deal => JSON.stringify([deal, assumptions]);
+
+    function updateModelPanel() {
+      const deal = modelDealInputs();
+      const missing = modelMissing(deal);
+      const noServer = location.protocol === "file:";
+      $("m-run").disabled = noServer || missing.length > 0;
+      const fresh = modelResult && modelResult.key === modelKey(deal);
+      $("m-download").disabled = noServer || !fresh;
+      $("m-results").classList.toggle("stale", !!modelResult && !fresh);
+      // The status line is worked out fresh each time, so old hints never linger.
+      let text = "", kind = "";
+      if (noServer) { text = "The financial model needs the SearchDesk server: run npm start, then open http://localhost:3000."; kind = "error"; }
+      else if (modelError) { text = modelError; kind = "error"; }
+      else if (modelResult && !fresh) { text = "Inputs changed since the last run. Run the model again to update these numbers."; kind = "stale"; }
+      else if (!modelResult && missing.length) { text = "To run the model, add: " + missing.join(", ") + "."; }
+      $("m-status").textContent = text;
+      $("m-status").className = "model-status" + (kind ? " " + kind : "");
+    }
+
+    function renderModelResults(r) {
+      const pct = x => x == null ? "n/a" : (x * 100).toFixed(1) + "%";
+      const mult = x => x == null ? "n/a" : x.toFixed(2) + "x";
+      const usd = x => x == null ? "No limit" : money(x);
+      const cols = r.scenarios;
+      const row = (label, fn) => `<tr><td>${label}</td>${cols.map(s => `<td>${fn(s)}</td>`).join("")}</tr>`;
+      $("m-results").innerHTML = `
+        <dl class="fin">
+          <dt>Total uses (everything the deal costs)</dt><dd>${money(r.totalUses)}</dd>
+          <dt>Buyer equity (cash you bring)</dt><dd>${money(r.buyerEquity)}</dd>
+          <dt>Purchase price used</dt><dd>${money(r.purchasePrice)}</dd>
+        </dl>
+        <div class="table-wrap"><table class="model">
+          <thead><tr><th>Scenario</th>${cols.map(s => `<th>${escapeHtml(s.name)}</th>`).join("")}</tr></thead>
+          <tbody>
+            ${row("Lowest DSCR (yrs 1–5)", s => `<span class="${s.lowestDscr != null && s.lowestDscr >= r.targetDscr ? "check-ok" : "check-bad"}">${mult(s.lowestDscr)}</span>`)}
+            ${row(`Max price at ${r.targetDscr}x DSCR`, s => usd(s.maxPrice))}
+            ${row("Price check", s => `<span class="${s.priceCheck === "Above max" ? "check-bad" : "check-ok"}">${escapeHtml(s.priceCheck)}</span>`)}
+            ${row("5-year IRR", s => pct(s.irr))}
+            ${row("MOIC", s => mult(s.moic))}
+          </tbody>
+        </table></div>
+        <p class="disclaimer">Calculated by your approved Excel template (v1.0) with My assumptions. Rough estimates for screening only, not financial or lending advice. Download the Excel model for the full schedules.</p>`;
+    }
+
+    async function runModel() {
+      const deal = modelDealInputs();
+      if (modelMissing(deal).length) return updateModelPanel();
+      const key = modelKey(deal);
+      const btn = $("m-run"), startedAt = Date.now();
+      modelError = null;
+      btn.disabled = true;
+      btn.textContent = "Running…";
+      let res, data;
+      try {
+        res = await fetch("/api/model", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deal, assumptions }) });
+        data = await res.json().catch(() => null);
+      } catch (e) { data = null; }
+      btn.textContent = "Run financial model";
+      const ok = !!(res && res.ok && data && data.results);
+      track("model_run", { success: ok, error_code: ok ? null : (data && data.error && data.error.code) || "server_unreachable", duration_ms: Date.now() - startedAt });
+      if (!ok) {
+        modelError = data && data.error && data.error.message ? data.error.message : "Couldn't reach the SearchDesk server. Make sure it's running and try again.";
+        updateModelPanel();
+        return;
+      }
+      modelResult = { key, results: data.results };
+      renderModelResults(data.results);
+      updateModelPanel();
+    }
+
+    async function downloadModel() {
+      const deal = modelDealInputs();
+      const btn = $("m-download");
+      modelError = null;
+      btn.disabled = true;
+      let ok = false;
+      try {
+        const res = await fetch("/api/model?download=1", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deal, assumptions }) });
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          throw new Error(data && data.error && data.error.message ? data.error.message : "The download failed. Try again.");
+        }
+        const blob = await res.blob();
+        const cd = res.headers.get("Content-Disposition") || "";
+        const m = /filename\*=UTF-8''([^;]+)/.exec(cd) || /filename="([^"]+)"/.exec(cd);
+        const name = m ? decodeURIComponent(m[1]) : "SearchDesk model.xlsx";
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        ok = true;
+      } catch (e) {
+        modelError = e.message || "The download failed. Try again.";
+      }
+      track("model_downloaded", { success: ok });
+      updateModelPanel();
     }
 
     function showMsg(text, type) {
@@ -1009,13 +1032,10 @@
       if (!d.state) missing.push("state");
       if (d.earnings == null) missing.push(d.earningsType);
       if (d.channel === "Broker" && d.askingPrice == null) missing.push("asking price (required for broker deals)");
-      [["f-price", "asking price"], ["f-earnings", d.earningsType], ["f-revenue", "revenue"]].forEach(([id, label]) => {
+      [["f-price", "asking price"], ["f-offer", "offer price"], ["f-earnings", d.earningsType], ["f-revenue", "revenue"]].forEach(([id, label]) => {
         if (Number.isNaN(parseMoney($(id).value))) missing.push(`a number for ${label} (like 750000 or 750K)`);
       });
       if (d.link && !/^https?:\/\//i.test(d.link)) missing.push("a listing link starting with http:// or https://");
-      const fz = d.financing;
-      const total = fz.sbaPct + fz.sellerPct + fz.buyerPct + fz.investorPct;
-      if (pctOff(total)) missing.push(`financing percentages that add up to 100% (now ${+total.toFixed(2)}%)`);
       if (missing.length) { showMsg("Please add: " + missing.join(", ") + ".", "error"); return; }
 
       const isEdit = !!editingId;
@@ -1032,7 +1052,6 @@
         channel: d.channel,
         earnings_type: d.earningsType,
         stage: d.stage,
-        verdict: screenDeal(d, buyBox, assumptions).verdict || "none",
         ai_filled: aiFilledThisDeal,
       });
       if (isEdit && prevStage && prevStage !== d.stage) {
@@ -1065,7 +1084,7 @@
       $("f-stage").value = d.stage || "Sourced";
       $("f-next").value = d.nextStep || "";
       $("f-due").value = d.dueDate || "";
-      setFinancingInputs(getFinancing(d));
+      $("f-offer").value = d.offerPrice != null ? money(d.offerPrice) : "";
     }
 
     function startEdit(id) {
@@ -1075,7 +1094,10 @@
       setFormValues(d);
       clearAiMarks();
       aiFilledThisDeal = false;
-      $("form-title").textContent = "2. Edit deal: " + d.name;
+      modelResult = null; // a different deal: clear the last model run
+      $("m-results").innerHTML = "";
+      modelError = null;
+      $("form-title").textContent = "3. Edit deal: " + d.name;
       $("save-btn").textContent = "Update deal";
       $("cancel-btn").hidden = false;
       showMsg("", "");
@@ -1088,7 +1110,7 @@
     function resetForm() {
       $("deal-form").reset();
       editingId = null;
-      $("form-title").textContent = "2. Add a deal";
+      $("form-title").textContent = "3. Add a deal";
       $("save-btn").textContent = "Save to pipeline";
       $("cancel-btn").hidden = true;
       $("f-role").value = "Broker";
@@ -1098,9 +1120,10 @@
       $("t-text").value = "";
       clearPdf();
       if (location.protocol !== "file:") setTeaserStatus("", "");
-      // form.reset() also clears salary and financing, so put them back
-      $("a-salary").value = money(assumptions.salary);
-      setFinancingInputs(DEFAULT_FINANCING);
+      // A new deal starts with an empty financial model panel
+      modelResult = null;
+      $("m-results").innerHTML = "";
+      modelError = null;
       showMsg("", "");
       updateChannelUI();
       updateEarningsUI();
@@ -1116,7 +1139,8 @@
     }
 
     function cardHtml(d, today) {
-      const s = screenDeal(d, buyBox, assumptions);
+      const s = screenDeal(d, buyBox);
+      const e = earningsOf(d);
       const due = dueStatus(d, today);
       const name = /^https?:\/\//i.test(d.link || "")
         ? `<a href="${escapeHtml(d.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(d.name)}</a>`
@@ -1140,10 +1164,7 @@
           ${contact}
           <div class="card-row">
             <span class="chip fit">Buy box fit ${s.fitCount}/5</span>
-            ${s.verdict ? `<span class="chip ${s.verdict === "Pass" ? "pass" : "dig"}">${s.verdict}</span>` : ""}
-            ${s.fin.earnings != null ? `<span class="meta">${s.fin.earningsType} ${moneyShort(s.fin.earnings)}</span>` : ""}
-            ${s.fin.multiple != null ? `<span class="meta">${s.fin.multiple.toFixed(1)}x ${s.fin.earningsType}</span>` : ""}
-            ${s.fin.dscr != null ? `<span class="meta">DSCR ${s.fin.dscr.toFixed(2)}x</span>` : ""}
+            ${e.amount != null ? `<span class="meta">${e.type} ${moneyShort(e.amount)}</span>` : ""}
           </div>
           <div class="next ${due}"><strong>Next:</strong> ${escapeHtml(d.nextStep || "No next step set")}${dueText}</div>
           <div class="card-actions">
@@ -1318,8 +1339,6 @@
     // ----- Wiring -----
     function init() {
       buyBox = Object.assign({}, DEFAULT_BUYBOX, load(BB_KEY, {}));
-      const savedAssume = load(ASSUME_KEY, {});
-      assumptions = { salary: Number.isFinite(savedAssume.salary) ? savedAssume.salary : DEFAULT_ASSUMPTIONS.salary };
       const stored = load(DEAL_KEY, null);
       if (Array.isArray(stored)) {
         deals = stored;
@@ -1333,8 +1352,6 @@
       fillSelect("f-growth", GROWTH, "Select…");
       fillSelect("f-reason", ["Retiring", "Other"], "Select…");
       fillSelect("f-stage", STAGES);
-      $("a-salary").value = money(assumptions.salary);
-      setFinancingInputs(DEFAULT_FINANCING);
       renderBuyBoxEditor();
 
       // Buy box edits
@@ -1373,14 +1390,19 @@
       form.addEventListener("submit", handleSave);
       $("cancel-btn").addEventListener("click", resetForm);
 
-      // Salary is shared across deals (financing is saved per deal with the form)
-      $("a-salary").addEventListener("input", () => {
-        const salary = num(parseMoney($("a-salary").value));
-        if (salary != null && salary >= 0) assumptions.salary = salary;
-        store(ASSUME_KEY, assumptions);
-        renderScreen();
-        renderPipeline();
+      // My assumptions: shared by every deal, saved in this browser
+      $("assumptions").addEventListener("input", onAssumptionsChange);
+      $("assumptions").addEventListener("change", onAssumptionsChange);
+      $("as-reset").addEventListener("click", () => {
+        try { localStorage.removeItem(MODEL_ASSUME_KEY); } catch (e) { /* storage unavailable */ }
+        loadAssumptions(true);
       });
+      $("as-link").addEventListener("click", () => { $("assumptions").querySelector("details").open = true; });
+
+      // Financial model panel
+      $("m-run").addEventListener("click", runModel);
+      $("m-download").addEventListener("click", downloadModel);
+      loadAssumptions(false);
 
       // Pipeline actions
       $("board").addEventListener("change", e => {

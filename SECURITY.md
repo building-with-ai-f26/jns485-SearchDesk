@@ -53,6 +53,7 @@ The main risks for this kind of app:
 - Uploaded PDFs are processed in memory and never written to disk.
 - The upload is checked (5 MB or smaller, must start with `%PDF-`), sent to Claude, and dropped when the request ends.
 - The server has no upload folder and no database.
+- **Financial model route (added after this review):** `POST /api/model` fills the approved Excel template in memory and sends the file straight back; nothing is saved. It uses the same other-website check, its own rate limit (60 per 15 minutes per visitor), a 32 KB request cap, and strict input validation (numbers in set ranges, Yes/No, SDE/EBITDA; the business name is written as plain text, never a formula). It makes no AI calls. Covered by `npm test`.
 
 ### 4. Ask-me-first list
 `AGENTS.md` now requires my approval before:

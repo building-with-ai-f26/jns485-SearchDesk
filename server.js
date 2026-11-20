@@ -1,6 +1,8 @@
 // SearchDesk server (runs locally or on Render).
 // - Serves the prototype (app/index.html) at http://localhost:3000 (or your onrender.com address)
 // - POST /api/extract: sends a pasted teaser (text and/or PDF) to Claude and returns structured deal fields.
+// - GET /api/model/defaults and POST /api/model: fill the approved financial model template with the deal
+//   and the user's assumptions, and return its headline numbers or the filled .xlsx (see model.js).
 // The API key is read from the ANTHROPIC_API_KEY environment variable (from .env locally, or from Render's
 // Environment settings). It is never logged, printed, or sent to the browser.
 
@@ -8,6 +10,9 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
+import {
+  getTemplateDefaults, validateInputs, calculate, fillTemplate, downloadName, ModelInputError, ModelEngineError,
+} from "./model.js";
 
 const ROOT = import.meta.dirname;
 const ON_RENDER = Boolean(process.env.RENDER); // Render sets RENDER=true on its servers
@@ -52,11 +57,14 @@ const MAX_PDF_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_BODY_BYTES = 7 * 1024 * 1024; // a 5 MB PDF is about 6.7 MB once base64-encoded, plus pasted text
 const TOO_LARGE_MESSAGE = "That upload is too large. PDFs must be 5 MB or smaller. Try a smaller PDF, or copy the teaser text and paste it instead.";
 
-// ----- Rate limit for POST /api/extract (protects your API credit once the app is public) -----
-const RATE_LIMIT = 10; // requests
-const RATE_WINDOW_MS = 15 * 60 * 1000; // per 15 minutes, per visitor IP
-const recentRequests = new Map(); // visitor IP -> times of their recent requests
+const MAX_MODEL_BODY_BYTES = 32 * 1024; // /api/model only receives a few numbers
 const MAX_TEXT_CHARS = 100_000;
+
+// ----- Rate limits, per visitor IP, per 15 minutes -----
+// /api/extract protects your API credit; /api/model costs no AI money but still does real work.
+const RATE_WINDOW_MS = 15 * 60 * 1000;
+const EXTRACT_LIMIT = 10;
+const MODEL_LIMIT = 60;
 
 // ----- What we ask Claude for -----
 const nullable = (schema) => ({ anyOf: [schema, { type: "null" }] });
@@ -116,23 +124,23 @@ function sendError(res, status, code, message) {
   sendJson(res, status, { error: { code, message } });
 }
 
-// Read the request body, up to MAX_BODY_BYTES. Past the limit, stop saving it but let the upload finish,
+// Read the request body, up to maxBytes (MAX_BODY_BYTES unless a route sets a smaller limit). Past the limit, stop saving it but let the upload finish,
 // so the browser receives the "too large" message instead of a dropped connection.
-function readBody(req) {
+function readBody(req, maxBytes = MAX_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
     req.on("data", (chunk) => {
       size += chunk.length;
-      if (size > MAX_BODY_BYTES * 3) { req.destroy(); return; } // far too big: just hang up
-      if (size <= MAX_BODY_BYTES) chunks.push(chunk);
+      if (size > maxBytes * 3) { req.destroy(); return; } // far too big: just hang up
+      if (size <= maxBytes) chunks.push(chunk);
     });
     req.on("end", () => {
-      if (size > MAX_BODY_BYTES) return reject(Object.assign(new Error("too large"), { tooLarge: true }));
+      if (size > maxBytes) return reject(Object.assign(new Error("too large"), { tooLarge: true }));
       resolve(Buffer.concat(chunks).toString("utf8"));
     });
     req.on("error", reject);
-    req.on("close", () => reject(Object.assign(new Error("closed"), { tooLarge: size > MAX_BODY_BYTES })));
+    req.on("close", () => reject(Object.assign(new Error("closed"), { tooLarge: size > maxBytes })));
   });
 }
 
@@ -149,26 +157,34 @@ function clientIp(req) {
   return req.socket.remoteAddress || "unknown";
 }
 
-// Sliding window: allow RATE_LIMIT requests per RATE_WINDOW_MS for each IP.
-// Returns 0 if this request is allowed, otherwise the number of seconds to wait.
-function rateLimitWait(ip) {
-  const now = Date.now();
-  const times = (recentRequests.get(ip) || []).filter((t) => now - t < RATE_WINDOW_MS);
-  if (times.length >= RATE_LIMIT) {
-    recentRequests.set(ip, times);
-    return Math.ceil((times[0] + RATE_WINDOW_MS - now) / 1000);
-  }
-  times.push(now);
-  recentRequests.set(ip, times);
-  return 0;
+// Sliding window: allow `limit` requests per RATE_WINDOW_MS for each IP. Each route has its own counter.
+// wait(ip) returns 0 if this request is allowed, otherwise the number of seconds to wait.
+function makeRateLimiter(limit) {
+  const recentRequests = new Map(); // visitor IP -> times of their recent requests
+  // Forget visitors with no recent requests, so memory use stays small.
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, times] of recentRequests) {
+      if (!times.some((t) => now - t < RATE_WINDOW_MS)) recentRequests.delete(ip);
+    }
+  }, RATE_WINDOW_MS).unref();
+  return {
+    limit,
+    wait(ip) {
+      const now = Date.now();
+      const times = (recentRequests.get(ip) || []).filter((t) => now - t < RATE_WINDOW_MS);
+      if (times.length >= limit) {
+        recentRequests.set(ip, times);
+        return Math.ceil((times[0] + RATE_WINDOW_MS - now) / 1000);
+      }
+      times.push(now);
+      recentRequests.set(ip, times);
+      return 0;
+    },
+  };
 }
-// Forget visitors with no recent requests, so memory use stays small.
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, times] of recentRequests) {
-    if (!times.some((t) => now - t < RATE_WINDOW_MS)) recentRequests.delete(ip);
-  }
-}, RATE_WINDOW_MS).unref();
+const extractLimiter = makeRateLimiter(EXTRACT_LIMIT);
+const modelLimiter = makeRateLimiter(MODEL_LIMIT);
 
 // Only accept /api/extract calls from the SearchDesk page itself (localhost or your onrender.com address),
 // not from other websites. Browsers always send an Origin header with these calls.
@@ -227,12 +243,12 @@ async function handleExtract(req, res) {
   if (!originAllowed(req)) {
     return sendError(res, 403, "forbidden_origin", "Teaser reading only works from the SearchDesk app itself.");
   }
-  const wait = rateLimitWait(clientIp(req));
+  const wait = extractLimiter.wait(clientIp(req));
   if (wait) {
     const minutes = Math.max(1, Math.ceil(wait / 60));
     res.setHeader("Retry-After", String(wait));
     return sendError(res, 429, "too_many_requests",
-      `You've read ${RATE_LIMIT} teasers in the last 15 minutes, which is the limit. Try again in about ${minutes} minute${minutes === 1 ? "" : "s"}, or enter this deal by hand.`);
+      `You've read ${EXTRACT_LIMIT} teasers in the last 15 minutes, which is the limit. Try again in about ${minutes} minute${minutes === 1 ? "" : "s"}, or enter this deal by hand.`);
   }
   if (Number(req.headers["content-length"]) > MAX_BODY_BYTES) {
     res.setHeader("Connection", "close");
@@ -344,6 +360,69 @@ function sendApiError(res, err, hadPdf) {
   return sendError(res, 500, "server_error", "Something went wrong on the SearchDesk server. Try again.");
 }
 
+// ----- POST /api/model (and ?download=1) -----
+// Fills the approved template with the deal + the user's assumptions. Returns the template's headline numbers
+// as JSON, or the filled .xlsx. All math happens inside the template's formulas (see model.js).
+// Nothing is saved on the server: the file is built in memory and sent straight back.
+async function handleModel(req, res, wantsDownload) {
+  if (!originAllowed(req)) {
+    return sendError(res, 403, "forbidden_origin", "The financial model only works from the SearchDesk app itself.");
+  }
+  const wait = modelLimiter.wait(clientIp(req));
+  if (wait) {
+    const minutes = Math.max(1, Math.ceil(wait / 60));
+    res.setHeader("Retry-After", String(wait));
+    return sendError(res, 429, "too_many_requests",
+      `You've run the financial model ${MODEL_LIMIT} times in the last 15 minutes, which is the limit. Try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`);
+  }
+  if (Number(req.headers["content-length"]) > MAX_MODEL_BODY_BYTES) {
+    res.setHeader("Connection", "close");
+    return sendError(res, 413, "too_large", "That request is too large.");
+  }
+
+  let body;
+  try {
+    body = JSON.parse(await readBody(req, MAX_MODEL_BODY_BYTES));
+  } catch (err) {
+    if (err.tooLarge) return sendError(res, 413, "too_large", "That request is too large.");
+    return sendError(res, 400, "bad_request", "The request couldn't be read. Try again.");
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return sendError(res, 400, "bad_request", "The request couldn't be read. Try again.");
+  }
+
+  let cells;
+  try {
+    cells = validateInputs(body.deal, body.assumptions);
+  } catch (err) {
+    if (err instanceof ModelInputError) return sendError(res, 400, "invalid_input", err.message);
+    throw err;
+  }
+
+  try {
+    if (wantsDownload) {
+      const file = fillTemplate(cells);
+      const name = downloadName(cells.B5);
+      const ascii = name.replace(/[^\x20-\x7e]/g, "_");
+      res.writeHead(200, {
+        ...SECURITY_HEADERS,
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`,
+        "Content-Length": String(file.length),
+        "Cache-Control": "no-store",
+      });
+      return res.end(Buffer.from(file.buffer, file.byteOffset, file.length));
+    }
+    return sendJson(res, 200, { results: calculate(cells) });
+  } catch (err) {
+    if (err instanceof ModelEngineError) {
+      console.error("Financial model engine error:", err.message); // a cell reference only, no deal data
+      return sendError(res, 500, "engine_error", `${err.message} The formula engine can't calculate this; open the downloaded Excel file instead.`);
+    }
+    throw err;
+  }
+}
+
 // ----- Server -----
 const server = http.createServer(async (req, res) => {
   try {
@@ -358,6 +437,15 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/api/extract") {
       if (req.method !== "POST") return sendError(res, 405, "method", "Use POST.");
       return await handleExtract(req, res);
+    }
+    if (pathname === "/api/model/defaults") {
+      if (req.method !== "GET") return sendError(res, 405, "method", "Use GET.");
+      return sendJson(res, 200, getTemplateDefaults()); // the template's own default values
+    }
+    if (pathname === "/api/model") {
+      if (req.method !== "POST") return sendError(res, 405, "method", "Use POST.");
+      const query = String(req.url || "").split("?")[1] || "";
+      return await handleModel(req, res, new URLSearchParams(query).get("download") === "1");
     }
     sendError(res, 404, "not_found", "Not found.");
   } catch (err) {
@@ -379,5 +467,6 @@ server.listen(PORT, HOST, () => {
     : ON_RENDER
       ? "AI teaser reading is off: set ANTHROPIC_API_KEY in Render's Environment settings."
       : "AI teaser reading is off: add your key to .env, then restart.");
+  console.log("Financial model: approved template loaded (model/searchdesk-model-template.xlsx).");
   console.log("Press Ctrl+C to stop.");
 });
