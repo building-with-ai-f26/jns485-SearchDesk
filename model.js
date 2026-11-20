@@ -38,7 +38,7 @@ export const ASSUMPTION_FIELDS = [
   { key: "sellerRate", cell: "B32", kind: "pct", min: 0, max: 0.3, label: "Seller note rate" },
   { key: "sellerStandby", cell: "B33", kind: "years", min: 0, max: 10, label: "Seller note standby" },
   { key: "sellerAmort", cell: "B34", kind: "years", min: 1, max: 30, label: "Seller note amortization" },
-  { key: "investorPct", cell: "B64", kind: "pct", min: 0, max: 1, label: "Investor equity %" },
+  { key: "investorPct", cell: "B64", kind: "pct", min: 0, max: 1, label: "Outside investor equity %" },
   // Deal costs
   { key: "closingCostPct", cell: "B22", kind: "pct", min: 0, max: 0.25, label: "Closing costs %" },
   { key: "cushionMonths", cell: "B23", kind: "number", min: 0, max: 24, label: "Extra cash cushion (months)" },
@@ -168,7 +168,7 @@ export function validateInputs(deal, assumptions) {
   for (const f of ASSUMPTION_FIELDS) cells[f.cell] = cleanValue(f, assumptions[f.key]);
   const financed = cells.B28 + cells.B31 + cells.B64;
   if (financed > 1 + 1e-9) {
-    throw new ModelInputError(`Senior loan + seller note + investor equity add up to ${+(financed * 100).toFixed(2)}% of total uses. Buyer equity can't be negative; lower one of them.`);
+    throw new ModelInputError(`Senior loan + seller note + outside investors add up to ${+(financed * 100).toFixed(2)}% of total uses. Your equity can't be negative; lower one of them.`);
   }
   return cells;
 }

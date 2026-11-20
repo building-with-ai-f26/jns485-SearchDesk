@@ -144,8 +144,12 @@
     .assume-grid .row2 { align-items: end; } /* keep inputs lined up when a label wraps */
     .unit { display: flex; align-items: center; gap: 6px; }
     .unit span { font-size: 13px; color: var(--muted); min-width: 14px; }
-    .equity-line { font-size: 14px; padding: 8px 10px; border-radius: 8px; background: var(--accent-soft); border: 1px solid var(--good-border); margin: 4px 0 12px; }
-    .equity-line.bad { background: var(--bad-bg); border-color: var(--bad-border); color: var(--bad); font-weight: 600; }
+    /* "Your equity" is calculated, not typed: greyed out like a disabled input */
+    .auto-field input[readonly] { background: var(--neutral-bg); color: var(--muted); border-style: dashed; cursor: default; }
+    .auto-field input[readonly]:focus { box-shadow: none; border-color: var(--input-border); }
+    .auto-field.bad input[readonly] { background: var(--bad-bg); color: var(--bad); border: 1px solid var(--bad); font-weight: 600; }
+    .sources-total { font-size: 13px; color: var(--muted); margin: -4px 0 12px; }
+    .sources-total.bad { color: var(--bad); font-weight: 600; }
     .assume-status { font-size: 13px; margin: 0 0 12px; }
     .assume-status:empty { display: none; }
     .assume-status.error { color: var(--bad); }
@@ -357,8 +361,9 @@
                 <div class="field"><label for="as-sellerStandby">Seller note standby (years, no payments)</label><div class="unit"><input type="number" id="as-sellerStandby" data-kind="years" step="1" min="0" max="10" /><span>yrs</span></div></div>
                 <div class="field"><label for="as-sellerAmort">Seller note amortization (years after standby)</label><div class="unit"><input type="number" id="as-sellerAmort" data-kind="years" step="1" min="1" max="30" /><span>yrs</span></div></div>
               </div>
-              <div class="field"><label for="as-investorPct">Investor equity (% of total uses) <span class="hint">(Investor 1; add more investors in Excel)</span></label><div class="unit"><input type="number" id="as-investorPct" data-kind="pct" step="1" min="0" max="100" /><span>%</span></div></div>
-              <div class="equity-line" id="as-equity" role="status"></div>
+              <div class="field"><label for="as-investorPct">Outside investor equity (% of total uses) <span class="hint">(other people's money, not yours; add more outside investors in Excel)</span></label><div class="unit"><input type="number" id="as-investorPct" data-kind="pct" step="1" min="0" max="100" /><span>%</span></div></div>
+              <div class="field auto-field" id="as-equity-field"><label for="as-equity">Your equity (% of total uses) <span class="hint">(auto: 100% minus senior loan, seller note, and outside investors)</span></label><div class="unit"><input type="text" id="as-equity" readonly tabindex="-1" aria-readonly="true" /><span>%</span></div></div>
+              <div class="sources-total" id="as-total" role="status"></div>
             </div>
             <div>
               <h3>Deal costs</h3>
@@ -844,7 +849,8 @@
       assumptions = next;
     }
 
-    // Buyer equity is whatever the senior loan, seller note, and investors don't cover (the template's B36).
+    // Your equity (the template's buyer equity, B36) is whatever the senior loan, seller note, and
+    // outside investors don't cover. It's shown for clarity only and is never written to the template.
     function buyerEquityPct() {
       return 1 - (assumptions.seniorPct || 0) - (assumptions.sellerPct || 0) - (assumptions.investorPct || 0);
     }
@@ -852,14 +858,17 @@
     function renderAssumptionsSummary() {
       if (!assumptions) return;
       const eq = buyerEquityPct();
-      const el = $("as-equity");
-      el.textContent = eq < -1e-9
-        ? `Buyer equity (your cash): ${roundPct(eq)}% of total uses. That's negative: senior loan + seller note + investors add up to more than 100%. Lower one of them.`
-        : `Buyer equity (your cash): ${roundPct(eq)}% of total uses (100% minus the senior loan, seller note, and investors).`;
-      el.className = "equity-line" + (eq < -1e-9 ? " bad" : "");
+      const negative = eq < -1e-9;
+      $("as-equity").value = roundPct(eq);
+      $("as-equity-field").classList.toggle("bad", negative);
+      const total = $("as-total");
+      total.textContent = negative
+        ? `Your equity can't be negative: senior loan + seller note + outside investors add up to ${roundPct(1 - eq)}% of total uses. Lower one of them so the total is 100% or less.`
+        : "Total sources: 100% (senior loan + seller note + outside investors + your equity).";
+      total.className = "sources-total" + (negative ? " bad" : "");
       const pct = k => roundPct(assumptions[k]) + "%";
       $("as-summary").textContent = `${pct("seniorPct")} senior${assumptions.seniorIsSba === "Yes" ? " (SBA)" : ""} at ${pct("seniorRate")} · ` +
-        `${pct("sellerPct")} seller note · ${pct("investorPct")} investors · ${roundPct(eq)}% your cash · target DSCR ${assumptions.targetDscr}x (click to edit)`;
+        `${pct("sellerPct")} seller note · ${pct("investorPct")} outside investors · ${roundPct(eq)}% your equity · target DSCR ${assumptions.targetDscr}x (click to edit)`;
     }
 
     function onAssumptionsChange() {
@@ -946,7 +955,7 @@
       $("m-results").innerHTML = `
         <dl class="fin">
           <dt>Total uses (everything the deal costs)</dt><dd>${money(r.totalUses)}</dd>
-          <dt>Buyer equity (cash you bring)</dt><dd>${money(r.buyerEquity)}</dd>
+          <dt>Your equity (cash you bring)</dt><dd>${money(r.buyerEquity)}</dd>
           <dt>Purchase price used</dt><dd>${money(r.purchasePrice)}</dd>
         </dl>
         <div class="table-wrap"><table class="model">
