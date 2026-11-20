@@ -199,9 +199,13 @@
     <section id="live-demo">
       <h2>Product Showcase (Prototype / Live App / 2-Min Video)</h2>
       <p>
-        <strong>Current Status:</strong> Build 2: local app with AI teaser reading.<br />
-        <strong>Demo:</strong> Screenshots of the local app below (fictional sample deals). Live cloud app URL coming in Build 5.
+        <strong>Current Status:</strong> Build 3: live app with my approved financial model.<br />
+        <strong>Live app:</strong> <a href="https://searchdesk.onrender.com/">searchdesk.onrender.com</a> (Render free tier: after 15 idle minutes it sleeps, so the first load can take ~30–60 seconds). Screenshots below use fictional deals.
       </p>
+      <figure>
+        <a href="images/build3-financial-model.png"><img src="images/build3-financial-model.png" alt="SearchDesk Financial model panel on the live app: total uses, your equity, and purchase price, then a four-scenario table (Flat, Base, Upside, Cost improvement) with lowest DSCR, max price at 1.4x DSCR, price check, 5-year IRR, and MOIC, plus Run financial model and Download Excel model buttons" /></a>
+        <figcaption>Build 3: live app with approved financial model.</figcaption>
+      </figure>
       <figure>
         <a href="images/build2-ai-teaser.png"><img src="images/build2-ai-teaser.png" alt="SearchDesk Paste a teaser panel after reading a sample PDF teaser: the deal form is pre-filled with fields marked AI, and a status line shows tokens used and an estimated cost of $0.00073" /></a>
         <figcaption>Build 2 · AI teaser reading: upload a PDF or paste a teaser, and Claude Haiku 5.5 pre-fills the deal form. Fields it filled are marked AI for review; anything the teaser didn't state stays blank. This run cost about $0.0007 (fictional sample teaser).</figcaption>
@@ -224,21 +228,25 @@
       <h3>1. Target User & The Job to Be Done</h3>
       <p><strong>Who is this for?</strong> Me: Jordan Steinroeder, an NYU Stern student starting a self-funded search for a B2B services business in the New York metro area. I'm a first-time searcher who will soon be juggling broker deals (teasers, NDAs, CIMs) alongside direct outreach to owners, and I haven't set up a way to track deals yet. Evidence: an ETA owner I spoke with who completed a search said a CRM like HubSpot was "absolutely necessary."</p>
       <p><strong>The painful "Before" workflow:</strong> Without a system, I'd fall into the default setup other searchers use: teasers in email, contacts in HubSpot, numbers in Excel, and next steps in my head. Broker deals and direct-outreach deals end up in different places, and follow-ups slip during a long search.</p>
-      <p><strong>The "After" workflow with this product:</strong> Every deal, from either channel, lives in one SearchDesk pipeline with its key facts, buy box fit, a quick financial read, its stage, and a next step with a date.</p>
+      <p><strong>The "After" workflow with this product:</strong> I paste a broker teaser or PDF, check the facts the AI pulled out, and in a minute get my own approved Excel model's results (sources &amp; uses, debt coverage, 4 scenarios, max price, and returns) plus a filled Excel file I can keep adjusting.</p>
 
       <h3>2. Scope & Explicit Non-Goals</h3>
+      <p><strong>Product focus (PRD v3):</strong> Narrowed to one job done well: paste a broker teaser or PDF → AI extracts the deal facts → my approved Excel acquisition model calculates sources &amp; uses, debt schedule, 4 scenarios, max price at target DSCR, and equity returns → download the filled Excel model to keep adjusting. (Professor's advice: avoid scope creep.)</p>
       <ul>
-        <li><strong>In Scope (Core Workflow):</strong> Add a deal by pasting a broker teaser or uploading a PDF (AI pre-fills the key facts for review) or entering it by hand → see buy box fit + a quick financial read → save it to the pipeline with a stage and next step. Each searcher sets their buy box once (target industries, geography, deal size, and seller situation), and every deal is checked against it.</li>
+        <li><strong>In Scope (Core Workflow):</strong> Paste a broker teaser or upload a PDF → AI extracts the deal facts for me to review → set my assumptions once (financing, deal costs, operating) → my approved Excel model calculates the results → download the filled Excel model. The buy box check and the simple pipeline from earlier builds stay as they are, but new work goes into the core workflow.</li>
         <li><strong>Out of Scope #1:</strong> No automatic inbox capture. Teasers are pasted or uploaded by hand; pulling them straight from email is a later idea.</li>
         <li><strong>Out of Scope #2:</strong> No email or calendar sync or contact tracking yet. Relationship tracking for brokers, owners, and lenders is planned for a later build.</li>
-        <li><strong>Out of Scope #3:</strong> No automatic deal sourcing or full valuation. It's a quick screen, not a model or investment advice.</li>
+        <li><strong>Out of Scope #3:</strong> No automatic deal sourcing and no investment advice. The model gives screening estimates; the AI never does the financial math.</li>
       </ul>
 
       <h3>3. How It Works Under the Hood & Riskiest Assumption (Week 2+)</h3>
       <p><strong>Riskiest Assumption:</strong> Searchers won't see enough reason to switch from the Excel + HubSpot setup they already use.</p>
       <p><strong>How Build 2 tests it:</strong> Build 2 adds the first feature Excel and HubSpot can't do — AI teaser reading that turns a pasted teaser or PDF into a screened deal in seconds. PostHog now tracks whether people actually use it (<code>teaser_read</code> vs. manual deal entry), and I'll ask pod testers on Nov 17 whether it would make them switch and what's missing. Secondary risk: AI extraction accuracy on real teasers — tested so far on fictional samples, with every AI-filled field tagged for user review.</p>
       <p><strong>Next to reduce the risk:</strong> Industry benchmarks (Build 3) and searcher-specific relationship tracking (brokers, owners, lenders), plus a possible import from Excel/HubSpot to lower switching cost.</p>
-      <p><strong>How the app works:</strong> Browser (paste teaser or upload PDF) → local Node server (API key kept in <code>.env</code>) → Claude API (Haiku, structured output) → extracted deal fields → user reviews and edits → buy box screen + capital stack → saved to pipeline (stored in the browser).</p>
+      <p><strong>How the app works:</strong> Browser → Node server on Render (API key in Render environment variables) → Claude API (Haiku) for teaser extraction only → server fills my approved template's input cells and calculates it with a spreadsheet engine (HyperFormula) → headline numbers + downloadable Excel. The AI never does financial math.</p>
+      <p><strong>Hosting:</strong> Render free web service (sleeps after 15 idle minutes; first load can take ~30–60 seconds).</p>
+      <p><strong>Database:</strong> None. Deals and assumptions stay in each visitor's browser; nothing is stored on the server.</p>
+      <p><strong>Security:</strong> Separate live API key with a $5/month cap; per-visitor rate limits (10 teaser reads, 60 model runs per 15 minutes); upload size caps; blocks calls from other websites; security headers. Full audit in <a href="https://github.com/building-with-ai-f26/jns485-SearchDesk/blob/main/SECURITY.md">SECURITY.md</a>.</p>
 
       <h3>4. Unit Economics & Analytics Snapshot (Updated Weekly)</h3>
       <div class="grid-2">
@@ -249,7 +257,7 @@
         </div>
         <div class="stat-box">
           <div class="stat-label">Est. Cost Per User Run</div>
-          <div class="stat-value">~$0.0003 per teaser read (Claude Haiku)</div>
+          <div class="stat-value">~$0.0003 per teaser read; model runs cost $0 (no AI)</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">User Evidence (Analytics from Build 2)</div>
@@ -290,9 +298,10 @@
       <div class="log-entry">
         <h3>Build 3 · Build.exe: The Core Workflow (Due Nov 23)</h3>
         <ul>
-          <li><strong>What shipped:</strong> Coming in Week 3.</li>
-          <li><strong>What broke / changed in PRD:</strong> Coming in Week 3.</li>
-          <li><strong>Cost & time this week:</strong> Not yet logged (Build 3).</li>
+          <li><strong>What shipped:</strong> Live app at <a href="https://searchdesk.onrender.com/">searchdesk.onrender.com</a>; security audit and <a href="https://github.com/building-with-ai-f26/jns485-SearchDesk/blob/main/SECURITY.md">SECURITY.md</a>; approved financial model v1.0 connected to the app with in-app assumptions and Excel download; outside investors vs. your equity clarified.</li>
+          <li><strong>Things learned with AI:</strong> Deploying a Node app with secrets in host settings; rate limits and spend caps; separating AI extraction from financial math; financial modeling decisions (working capital peg vs. cash cushion, max price at target DSCR, leverage-driven returns).</li>
+          <li><strong>What broke / changed in PRD:</strong> The attack review found a malformed request could crash the server (fixed). The product narrowed from a deal pipeline to financial modeling. The in-app math was replaced by my approved Excel template as the single source of truth.</li>
+          <li><strong>Cost & time this week:</strong> $20/month Claude Pro + API usage under $0.10; Render free; $5/month cap on the live key · 4 hours</li>
         </ul>
       </div>
 
