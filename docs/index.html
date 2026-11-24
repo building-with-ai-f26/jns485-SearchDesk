@@ -175,6 +175,9 @@
       border: 1px solid var(--border);
       border-radius: 8px;
     }
+    figure img.phone-shot {
+      max-width: 320px;
+    }
     figcaption {
       font-size: 13px;
       color: var(--muted);
@@ -217,20 +220,20 @@
         <strong>Live app:</strong> <a href="https://searchdesk.onrender.com/">searchdesk.onrender.com</a> (Render free tier: after 15 idle minutes it sleeps, so the first load can take ~30–60 seconds). Screenshots below use fictional deals.
       </p>
       <figure>
-        <a href="images/build3-financial-model.png"><img src="images/build3-financial-model.png" alt="SearchDesk Financial model panel on the live app: total uses, your equity, and purchase price, then a four-scenario table (Flat, Base, Upside, Cost improvement) with lowest DSCR, max price at 1.4x DSCR, price check, 5-year IRR, and MOIC, plus Run financial model and Download Excel model buttons" /></a>
-        <figcaption>Build 3: live app with approved financial model.</figcaption>
+        <a href="images/build4-analyze-results.png"><img src="images/build4-analyze-results.png" alt="SearchDesk step 3, Run model: Base-case summary boxes for asking price ($2,400,000), max price ($1,922,630, above max in red), lowest DSCR (1.17x vs. 1.4x target, red), and 5-year IRR (65.8% vs. 25% target, green), then a four-scenario table with green check and red cross marks" /></a>
+        <figcaption>Run model: every number comes from the approved Excel template. Green ✓ and red ✗ show at a glance whether max price, DSCR, and IRR meet your targets (fictional sample deal).</figcaption>
       </figure>
       <figure>
-        <a href="images/build2-ai-teaser.png"><img src="images/build2-ai-teaser.png" alt="SearchDesk Paste a teaser panel after reading a sample PDF teaser: the deal form is pre-filled with fields marked AI, and a status line shows tokens used and an estimated cost of $0.00073" /></a>
-        <figcaption>Build 2 · AI teaser reading: upload a PDF or paste a teaser, and Claude Haiku 5.5 pre-fills the deal form. Fields it filled are marked AI for review; anything the teaser didn't state stays blank. This run cost about $0.0007 (fictional sample teaser).</figcaption>
+        <a href="images/build4-analyze-steps.png"><img src="images/build4-analyze-steps.png" alt="SearchDesk Analyze a deal page with a navy top bar and gold logo: step 1 Add teaser (paste text or upload a PDF for Claude to read) and step 2 Review facts, with the deal form beside a buy box check showing 5 of 5 fit" /></a>
+        <figcaption>Analyze a deal: 1. Add teaser (Claude reads text or a PDF and fills in the facts), 2. Review facts with an instant buy box check, then run the model and save to the pipeline.</figcaption>
       </figure>
       <figure>
-        <a href="images/build1-pipeline.png"><img src="images/build1-pipeline.png" alt="SearchDesk pipeline view with three sample deals grouped by stage, showing buy box fit, verdict, and an overdue next step highlighted in red" /></a>
-        <figcaption>Pipeline: every deal grouped by stage, with channel, buy box fit, verdict, and overdue next steps flagged in red.</figcaption>
+        <a href="images/build4-phone-results.png"><img class="phone-shot" src="images/build4-phone-results.png" alt="SearchDesk model results on a phone: summary boxes in two columns and one card per scenario (Flat, Base, Upside, Cost improvement) with green and red pass/fail marks" /></a>
+        <figcaption>On a phone: results stack into one card per scenario, with no sideways scrolling.</figcaption>
       </figure>
       <figure>
-        <a href="images/build1-screen.png"><img src="images/build1-screen.png" alt="SearchDesk instant screen for a sample deal showing the buy box checklist, capital stack table, estimated DSCR, and a Dig deeper verdict" /></a>
-        <figcaption>Instant screen: buy box checklist, capital stack (SBA, seller note, equity), rough DSCR, and a suggested verdict with reasons. Click to enlarge.</figcaption>
+        <a href="images/build4-pipeline.png"><img src="images/build4-pipeline.png" alt="SearchDesk Pipeline page with three sample deals grouped by stage, each showing buy box fit, next step, and an overdue next step flagged in red" /></a>
+        <figcaption>Pipeline: saved deals grouped by stage, with buy box fit and overdue next steps flagged in red.</figcaption>
       </figure>
     </section>
 
@@ -292,11 +295,19 @@
       <div class="log-entry">
         <h3>Build 1 · Intent.md & Throwaway Prototype (Due Nov 9)</h3>
         <ul>
-          <li><strong>What shipped:</strong> Git, GitHub CLI, and Claude Code are installed and working. The repo is in the building-with-ai-f26 org. The Product Page is live on GitHub Pages, and PRD v1 is published. Local prototype (single web page, data saved in the browser, screenshots above): set a buy box once; add broker or direct-outreach deals; get an instant screen using SDE or EBITDA, with a buy box checklist, price multiple, and a suggested "dig deeper" or "pass" verdict; model a capital stack (SBA loan, seller note, buyer and investor equity) with rough debt service and DSCR; and track every deal in a pipeline by stage, with next steps and overdue items flagged.</li>
+          <li><strong>What shipped:</strong> Git, GitHub CLI, and Claude Code are installed and working. The repo is in the building-with-ai-f26 org. The Product Page is live on GitHub Pages, and PRD v1 is published. Local prototype (single web page, data saved in the browser, screenshots below): set a buy box once; add broker or direct-outreach deals; get an instant screen using SDE or EBITDA, with a buy box checklist, price multiple, and a suggested "dig deeper" or "pass" verdict; model a capital stack (SBA loan, seller note, buyer and investor equity) with rough debt service and DSCR; and track every deal in a pipeline by stage, with next steps and overdue items flagged.</li>
           <li><strong>Things learned with AI:</strong> Terminal basics (cd, folders), the difference between a commit and a push, keeping API keys in .env and out of GitHub, and that a narrow core workflow makes the PRD much easier to write.</li>
           <li><strong>What broke / changed in PRD:</strong> I created the repo under my personal account first, then recreated it in the class org and renamed it to the netid format. <code>cd ~/Desktop</code> failed because OneDrive moves the Windows Desktop. Copying &lt;placeholder&gt; text literally into commands caused errors. PowerShell blocked npm until I set the execution policy to RemoteSigned. Product focus shifted twice: first from outreach tracking to a deal-screening calculator, because evaluating listings seemed like the bottleneck, then to a full search pipeline after I realized a spreadsheet already handles the math and an ETA owner told me a CRM was essential.</li>
           <li><strong>Cost & time this week:</strong> $20/month Claude Pro subscription (no extra per-prompt charges); GitHub, GitHub Pages, and PostHog are free tier ($0) · 3 hours (2 setup + PRD, 1 prototype)</li>
         </ul>
+        <figure>
+          <a href="images/build1-screen.png"><img src="images/build1-screen.png" alt="SearchDesk instant screen for a sample deal showing the buy box checklist, capital stack table, estimated DSCR, and a Dig deeper verdict" /></a>
+          <figcaption>Instant screen: buy box checklist, capital stack (SBA, seller note, equity), rough DSCR, and a suggested verdict with reasons. Click to enlarge.</figcaption>
+        </figure>
+        <figure>
+          <a href="images/build1-pipeline.png"><img src="images/build1-pipeline.png" alt="SearchDesk pipeline view with three sample deals grouped by stage, showing buy box fit, verdict, and an overdue next step highlighted in red" /></a>
+          <figcaption>Pipeline: every deal grouped by stage, with channel, buy box fit, verdict, and overdue next steps flagged in red.</figcaption>
+        </figure>
       </div>
 
       <div class="log-entry">
@@ -307,16 +318,24 @@
           <li><strong>What broke / changed in PRD:</strong> My first API key was unusable because I only had the truncated preview, so I created a new one. The server didn't find the key at first because it only reads <code>.env</code> on startup and needed a restart. The app now runs with <code>npm start</code> instead of double-clicking the file. Moved AI teaser reading from out of scope to in scope.</li>
           <li><strong>Cost & time this week:</strong> $20/month Claude Pro (no extra per-prompt charges) + $5 Anthropic API credit (under $0.10 used; ~$0.0003–$0.0007 per teaser read); PostHog free tier ($0) · 2 hours</li>
         </ul>
+        <figure>
+          <a href="images/build2-ai-teaser.png"><img src="images/build2-ai-teaser.png" alt="SearchDesk Paste a teaser panel after reading a sample PDF teaser: the deal form is pre-filled with fields marked AI, and a status line shows tokens used and an estimated cost of $0.00073" /></a>
+          <figcaption>Build 2 · AI teaser reading: upload a PDF or paste a teaser, and Claude Haiku 5.5 pre-fills the deal form. Fields it filled are marked AI for review; anything the teaser didn't state stays blank. This run cost about $0.0007 (fictional sample teaser).</figcaption>
+        </figure>
       </div>
 
       <div class="log-entry">
         <h3>Build 3 · Build.exe: The Core Workflow (Due Nov 23)</h3>
         <ul>
-          <li><strong>What shipped:</strong> Live app at <a href="https://searchdesk.onrender.com/">searchdesk.onrender.com</a>; security audit and <a href="https://github.com/building-with-ai-f26/jns485-SearchDesk/blob/main/SECURITY.md">SECURITY.md</a>; approved financial model v1.0 connected to the app with in-app assumptions and Excel download; outside investors vs. your equity clarified.</li>
-          <li><strong>Things learned with AI:</strong> Deploying a Node app with secrets in host settings; rate limits and spend caps; separating AI extraction from financial math; financial modeling decisions (working capital peg vs. cash cushion, max price at target DSCR, leverage-driven returns).</li>
-          <li><strong>What broke / changed in PRD:</strong> The attack review found a malformed request could crash the server (fixed). The product narrowed from a deal pipeline to financial modeling. The in-app math was replaced by my approved Excel template as the single source of truth.</li>
-          <li><strong>Cost & time this week:</strong> $20/month Claude Pro + API usage under $0.10; Render free; $5/month cap on the live key · 4 hours</li>
+          <li><strong>What shipped:</strong> Live app at <a href="https://searchdesk.onrender.com/">searchdesk.onrender.com</a>; security audit and <a href="https://github.com/building-with-ai-f26/jns485-SearchDesk/blob/main/SECURITY.md">SECURITY.md</a>; approved financial model v1.0 connected to the app with in-app assumptions and Excel download; outside investors vs. your equity clarified. Redesigned the app with separate pages (Analyze a deal, Pipeline, My settings) and a top navigation bar; new navy + gold color scheme across the app, logo, favicon, and Product Page; cleaner results table that highlights max price vs. asking price and whether DSCR and IRR meet my targets; mobile-friendly layout for phone testing.</li>
+          <li><strong>Things learned with AI:</strong> Deploying a Node app with secrets in host settings; rate limits and spend caps; separating AI extraction from financial math; financial modeling decisions (working capital peg vs. cash cushion, max price at target DSCR, leverage-driven returns). Brand color carries meaning: reserving green and red for status signals makes the results easier to read at a glance.</li>
+          <li><strong>What broke / changed in PRD:</strong> The attack review found a malformed request could crash the server (fixed). The product narrowed from a deal pipeline to financial modeling. The in-app math was replaced by my approved Excel template as the single source of truth. A classmate said the green looked too similar to Excel. Since SearchDesk is meant to replace building models in Excel, I switched to navy + gold and reserved green and red for pass/fail signals only.</li>
+          <li><strong>Cost & time this week:</strong> $20/month Claude Pro + API usage under $0.10; Render free; $5/month cap on the live key; Nov 23 redesign added $0 (no new services; financial model runs are free) · 6 hours (4 + 2 on the Nov 23 redesign)</li>
         </ul>
+        <figure>
+          <a href="images/build3-financial-model.png"><img src="images/build3-financial-model.png" alt="SearchDesk Financial model panel on the live app: total uses, your equity, and purchase price, then a four-scenario table (Flat, Base, Upside, Cost improvement) with lowest DSCR, max price at 1.4x DSCR, price check, 5-year IRR, and MOIC, plus Run financial model and Download Excel model buttons" /></a>
+          <figcaption>Build 3: live app with approved financial model (before the navy + gold redesign).</figcaption>
+        </figure>
       </div>
 
       <div class="log-entry">
