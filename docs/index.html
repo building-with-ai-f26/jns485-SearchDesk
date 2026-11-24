@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SearchDesk · Building with AI (Fall 2026)</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='%2314213d'%3E%3Crect x='10' y='7' width='13' height='9' rx='1.5'/%3E%3Crect x='8' y='16.4' width='17' height='2.1' rx='1'/%3E%3Crect x='2.5' y='19' width='27' height='3.2' rx='1.6'/%3E%3Crect x='5.5' y='21' width='3' height='9' rx='1.2'/%3E%3Crect x='23.5' y='21' width='3' height='9' rx='1.2'/%3E%3C/g%3E%3Crect x='11.8' y='8.8' width='9.4' height='5.6' rx='.6' fill='%23c9a227'/%3E%3C/svg%3E" />
 
   <!-- PostHog analytics (US cloud). Pageviews, clicks, and session replay.
        The phc_ project key is PostHog's public, write-only key: safe in web pages (not a secret). -->
@@ -21,14 +22,18 @@
 
   <style>
     :root {
-      --bg: #fafafa;
+      /* Same brand as the app: deep navy + warm gold (gold is never body text on white: too low contrast) */
+      --bg: #f4f6fa;
       --card: #ffffff;
-      --text: #111827;
-      --muted: #4b5563;
-      --border: #e5e7eb;
-      --accent: #1d63dc;
-      --tag-bg: #eff6ff;
-      --tag-text: #1e40af;
+      --text: #172033;
+      --muted: #545e72;
+      --border: #e1e5ee;
+      --navy: #14213d;
+      --navy-hover: #23355f;
+      --gold: #c9a227;
+      --accent: var(--navy);
+      --tag-bg: #fbf5e1;
+      --tag-text: #7d6310;
     }
     * { box-sizing: border-box; }
     body {
@@ -43,8 +48,10 @@
       margin: 0 auto;
       padding: 48px 24px 80px;
     }
+    a { color: var(--navy); font-weight: 600; text-underline-offset: 2px; }
+    a:hover { color: var(--navy-hover); }
     header {
-      border-bottom: 1px solid var(--border);
+      border-bottom: 3px solid var(--gold);
       padding-bottom: 28px;
       margin-bottom: 32px;
     }
@@ -65,6 +72,7 @@
       line-height: 1.15;
       margin: 0 0 12px;
       letter-spacing: -0.02em;
+      color: var(--navy);
       display: flex;
       align-items: center;
       gap: 12px;
@@ -89,12 +97,15 @@
       text-decoration: none;
       background: var(--accent);
       color: #fff;
+      border: 1px solid var(--accent);
     }
+    .btn:hover { background: var(--navy-hover); color: #fff; }
     .btn-secondary {
       background: var(--card);
-      color: var(--text);
-      border: 1px solid var(--border);
+      color: var(--navy);
+      border: 1px solid #c5ccda;
     }
+    .btn-secondary:hover { background: #e9edf5; color: var(--navy); border-color: var(--navy); }
     section {
       background: var(--card);
       border: 1px solid var(--border);
@@ -106,6 +117,7 @@
       font-size: 20px;
       margin: 0 0 14px;
       letter-spacing: -0.01em;
+      color: var(--navy);
     }
     h3 {
       font-size: 16px;
@@ -113,7 +125,7 @@
     }
     p, ul {
       margin: 0 0 12px;
-      color: #1f2937;
+      color: var(--text);
     }
     .grid-2 {
       display: grid;
@@ -122,6 +134,7 @@
     }
     .stat-box {
       border: 1px solid var(--border);
+      border-top: 3px solid var(--gold);
       border-radius: 8px;
       padding: 14px 16px;
       background: var(--bg);
@@ -136,6 +149,7 @@
       font-size: 20px;
       font-weight: 700;
       margin-top: 4px;
+      color: var(--navy);
     }
     .log-entry {
       border-top: 1px solid var(--border);
@@ -174,16 +188,16 @@
     <header>
       <span class="eyebrow">NYU Stern · Building with AI · Fall 2026</span>
       <h1>
-        <!-- Logo: a flat desk (top + two legs) with a small laptop on it -->
+        <!-- Logo: a navy desk (top + two legs) with a small laptop, gold screen -->
         <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
-          <g fill="#2f7d4f">
+          <g fill="#14213d">
             <rect x="10" y="7" width="13" height="9" rx="1.5" />
             <rect x="8" y="16.4" width="17" height="2.1" rx="1" />
             <rect x="2.5" y="19" width="27" height="3.2" rx="1.6" />
             <rect x="5.5" y="21" width="3" height="9" rx="1.2" />
             <rect x="23.5" y="21" width="3" height="9" rx="1.2" />
           </g>
-          <rect x="11.8" y="8.8" width="9.4" height="5.6" rx="0.6" fill="#fff" />
+          <rect x="11.8" y="8.8" width="9.4" height="5.6" rx="0.6" fill="#c9a227" />
         </svg>
         SearchDesk
       </h1>

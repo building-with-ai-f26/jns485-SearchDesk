@@ -11,7 +11,7 @@
 ### Project structure
 | Path | What it is |
 | --- | --- |
-| `app/index.html` | The SearchDesk app: one self-contained page (buy box, My assumptions, add deal + teaser reader, buy box check, financial model panel, pipeline). Saves deals, buy box, and My assumptions in the browser's localStorage. Contains no financial math. |
+| `app/index.html` | The SearchDesk app: one self-contained page with a top nav and three views picked by the address: `#/analyze` (home: 1. Add teaser, 2. Review facts + buy box check, 3. Run model, 4. Save to pipeline), `#/pipeline`, and `#/settings` (My assumptions + buy box; opens first on a first visit). Navy (#14213D) + gold (#C9A227) brand; green/red only for pass/fail. Saves deals, buy box, and My assumptions in the browser's localStorage. Contains no financial math (pass/fail colors only compare template outputs with your targets). |
 | `server.js` | Local server: serves `app/index.html` at http://localhost:3000 and handles `POST /api/extract` (sends the teaser to Claude, returns structured fields plus tokens and cost), `GET /api/model/defaults`, and `POST /api/model` (see `model.js`). The only file that reads the API key. |
 | `model.js` | The financial model connection. Reads the approved template, writes the deal + My assumptions into its input cells only, calculates it with HyperFormula, and builds the filled `.xlsx` in memory. No hand-written financial math. |
 | `tests/` | Automated tests (`npm test`): the template's sample deal must match its own results, every formula must match Excel's saved results, the filled file must keep every formula and format. |

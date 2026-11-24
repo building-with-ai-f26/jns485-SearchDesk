@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SearchDesk · Local Prototype</title>
-  <!-- Favicon: the same desk logo as the header, as an inline SVG data URI -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='%232f7d4f'%3E%3Crect x='10' y='7' width='13' height='9' rx='1.5'/%3E%3Crect x='8' y='16.4' width='17' height='2.1' rx='1'/%3E%3Crect x='2.5' y='19' width='27' height='3.2' rx='1.6'/%3E%3Crect x='5.5' y='21' width='3' height='9' rx='1.2'/%3E%3Crect x='23.5' y='21' width='3' height='9' rx='1.2'/%3E%3C/g%3E%3Crect x='11.8' y='8.8' width='9.4' height='5.6' rx='.6' fill='%23fff'/%3E%3C/svg%3E" />
+  <title>SearchDesk</title>
+  <!-- Favicon: the desk logo in navy with a gold laptop screen, as an inline SVG data URI -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='%2314213d'%3E%3Crect x='10' y='7' width='13' height='9' rx='1.5'/%3E%3Crect x='8' y='16.4' width='17' height='2.1' rx='1'/%3E%3Crect x='2.5' y='19' width='27' height='3.2' rx='1.6'/%3E%3Crect x='5.5' y='21' width='3' height='9' rx='1.2'/%3E%3Crect x='23.5' y='21' width='3' height='9' rx='1.2'/%3E%3C/g%3E%3Crect x='11.8' y='8.8' width='9.4' height='5.6' rx='.6' fill='%23c9a227'/%3E%3C/svg%3E" />
   <!--
     SearchDesk prototype.
     One self-contained file: plain HTML, CSS, and JavaScript. No libraries, no API keys.
@@ -14,32 +14,36 @@
   -->
   <style>
     :root {
-      /* Light, clean base with green as the one accent color */
-      --bg: #f5f7f5;
+      /* Brand: deep navy + warm gold. Green and red are kept ONLY for pass/fail signals.
+         Gold is never used for body text on white (too low contrast); --gold-text is the readable dark gold. */
+      --navy: #14213d;
+      --navy-hover: #23355f;
+      --navy-soft: #e9edf5;
+      --gold: #c9a227;
+      --gold-text: #7d6310;
+      --gold-soft: #fbf5e1;
+      --bg: #f4f6fa;
       --card: #ffffff;
-      --text: #1c2620;
-      --muted: #5d6b63;
-      --border: #e1e7e3;
-      --input-border: #cfd8d2;
-      --accent: #2f7d4f;
-      --accent-dark: #22613c;
-      --accent-soft: #e9f5ee;
-      --tag-bg: #e9f5ee;
-      --tag-text: #22613c;
-      --good: #2f7d4f;
-      --good-bg: #e9f5ee;
-      --good-border: #bfe0cb;
-      --bad: #a94442;
-      --bad-bg: #f8eeed;
-      --bad-border: #e8cdcb;
-      --neutral-bg: #eef1ef;
-      --warn: #a35d0d;
-      --warn-bg: #fdf6e8;
+      --text: #172033;
+      --muted: #545e72;
+      --border: #e1e5ee;
+      --input-border: #c5ccda;
+      --good: #1c7440;
+      --good-bg: #e7f4ec;
+      --good-border: #b5dcc3;
+      --bad: #b02a22;
+      --bad-bg: #fbeceb;
+      --bad-border: #efc3bf;
+      --neutral-bg: #eef1f6;
+      --warn: #855400;
+      --warn-bg: #fdf5e2;
       --radius: 12px;
-      --shadow: 0 1px 2px rgba(28, 38, 32, 0.05), 0 2px 8px rgba(28, 38, 32, 0.04);
+      --shadow: 0 1px 2px rgba(20, 33, 61, 0.05), 0 2px 10px rgba(20, 33, 61, 0.05);
+      --nav-h: 60px;
     }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
+    html { scroll-padding-top: calc(var(--nav-h) + 12px); }
     body {
       margin: 0;
       font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -48,80 +52,128 @@
       color: var(--text);
       line-height: 1.55;
       -webkit-font-smoothing: antialiased;
+      overflow-wrap: break-word;
     }
-    .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px 80px; }
-    header { border-bottom: 2px solid var(--accent); padding-bottom: 22px; margin-bottom: 24px; }
-    .eyebrow {
-      display: inline-block; font-size: 12px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.06em; background: var(--tag-bg); color: var(--tag-text);
-      padding: 4px 10px; border-radius: 999px; margin-bottom: 10px;
-    }
-    h1 { font-size: 34px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02em; color: var(--accent-dark); display: flex; align-items: center; gap: 10px; }
-    .logo { width: 40px; height: 40px; flex-shrink: 0; }
-    .tagline { font-size: 17px; color: var(--muted); margin: 0 0 16px; }
-    .cta-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-    .btn {
-      display: inline-block; padding: 9px 16px; border-radius: 8px; font-weight: 600; font-size: 14px;
-      text-decoration: none; background: var(--accent); color: #fff; border: 1px solid var(--accent);
-      cursor: pointer; font-family: inherit; transition: background 0.15s, border-color 0.15s;
-    }
-    .btn:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
-    .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--input-border); }
-    .btn-secondary:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-dark); }
-    .btn-small { padding: 5px 10px; font-size: 13px; }
-    .btn-link { background: none; border: none; color: var(--accent); cursor: pointer; font: inherit; font-size: 13px; padding: 0; font-weight: 600; }
-    .btn-link:hover { color: var(--accent-dark); text-decoration: underline; }
-    section {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow);
-    }
-    h2 { font-size: 20px; margin: 0; letter-spacing: -0.01em; color: var(--accent-dark); }
-    h3 { font-size: 15px; margin: 0 0 8px; }
-    h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 16px 0 6px; }
-    .meta { font-size: 13px; color: var(--muted); }
-    .section-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    a { color: var(--navy); font-weight: 600; text-underline-offset: 2px; }
+    a:hover { color: var(--navy-hover); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    :focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
 
-    /* Form fields */
-    .field { margin-bottom: 12px; }
-    .field label, .field .label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    /* ---------- Top navigation ---------- */
+    .topnav { background: var(--navy); position: sticky; top: 0; z-index: 20; box-shadow: 0 1px 0 rgba(0,0,0,.2); }
+    .topnav-inner { max-width: 1100px; margin: 0 auto; padding: 0 20px; min-height: var(--nav-h); display: flex; align-items: center; gap: 24px; }
+    .brand { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+    .brand:hover { color: #fff; }
+    .logo { width: 32px; height: 32px; flex-shrink: 0; }
+    .logo-desk { fill: var(--gold); }
+    .logo-screen { fill: var(--navy); }
+    .navlinks { display: flex; gap: 4px; margin-left: auto; }
+    .navlinks a {
+      color: rgba(255, 255, 255, 0.85); text-decoration: none; font-size: 14px; font-weight: 600;
+      padding: 18px 12px 15px; border-bottom: 3px solid transparent; white-space: nowrap;
+    }
+    .navlinks a:hover { color: #fff; border-bottom-color: rgba(201, 162, 39, 0.5); }
+    .navlinks a.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .navlinks a:focus-visible { outline-color: var(--gold); outline-offset: -4px; }
+    .navlinks .short { display: none; }
+
+    /* ---------- Page layout ---------- */
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 20px 64px; }
+    .page-head { margin-bottom: 22px; }
+    .page-head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    h1 { font-size: 30px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.02em; color: var(--navy); }
+    .lede { font-size: 16px; color: var(--muted); margin: 0; }
+    h2 { font-size: 19px; line-height: 1.3; margin: 0; letter-spacing: -0.01em; color: var(--navy); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    h3 { font-size: 15px; margin: 0 0 8px; color: var(--navy); }
+    h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 8px; }
+    .meta { font-size: 13px; color: var(--muted); margin: 0; }
+    .footnote { font-size: 12px; color: var(--muted); text-align: center; margin: 28px 0 0; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow);
+    }
+    .card-head { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+    .card-head h2 { margin-bottom: 4px; }
+    .step-head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 18px; }
+    .step-head h2 { margin-bottom: 3px; }
+    .step-num {
+      flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--navy); color: var(--gold);
+      display: grid; place-items: center; font-weight: 700; font-size: 15px;
+    }
+    .callout { margin-top: 14px; background: var(--gold-soft); border: 1px solid #ecd98f; border-left: 4px solid var(--gold); border-radius: 8px; padding: 12px 14px; font-size: 14px; }
+    .edit-banner { margin-top: 14px; display: flex; gap: 6px 14px; flex-wrap: wrap; align-items: center; background: var(--navy-soft); border-left: 4px solid var(--gold); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+
+    /* ---------- Buttons (one set everywhere) ---------- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px;
+      padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; line-height: 1.2;
+      text-decoration: none; background: var(--navy); color: #fff; border: 1px solid var(--navy);
+      cursor: pointer; font-family: inherit; transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .btn:hover { background: var(--navy-hover); border-color: var(--navy-hover); color: #fff; }
+    .btn-secondary { background: var(--card); color: var(--navy); border-color: var(--input-border); }
+    .btn-secondary:hover { background: var(--navy-soft); border-color: var(--navy); color: var(--navy); }
+    .btn:disabled, .btn:disabled:hover { opacity: 0.5; cursor: not-allowed; background: var(--navy); border-color: var(--navy); color: #fff; }
+    .btn-secondary:disabled, .btn-secondary:disabled:hover { background: var(--card); color: var(--navy); border-color: var(--input-border); }
+    .btn-small { min-height: 32px; padding: 4px 12px; font-size: 13px; }
+    .btn-link { background: none; border: none; color: var(--navy); cursor: pointer; font: inherit; font-size: 13px; padding: 0; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+    .btn-link:hover { color: var(--navy-hover); }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ---------- Form fields ---------- */
+    .field { margin-bottom: 14px; }
+    .field label, .field .label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
     .hint { font-weight: 400; color: var(--muted); }
     input[type="text"], input[type="number"], input[type="date"], input[type="url"], select, textarea {
-      width: 100%; padding: 8px 10px; border: 1px solid var(--input-border); border-radius: 8px;
-      font: inherit; font-size: 14px; background: #fff; color: var(--text);
+      width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--input-border); border-radius: 8px;
+      font: inherit; font-size: 15px; background: #fff; color: var(--text);
     }
     input:focus, select:focus, textarea:focus {
-      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47, 125, 79, 0.15);
+      outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.35);
     }
-    input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
+    input[type="checkbox"], input[type="radio"] { accent-color: var(--navy); width: 16px; height: 16px; }
     textarea { min-height: 110px; resize: vertical; }
-    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-    .checks { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
-    .checks label { display: flex; align-items: center; gap: 6px; font-weight: 400; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 14px; }
+    .checks { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; }
+    .checks label { display: flex; align-items: center; gap: 7px; font-weight: 400; }
     .seg { display: inline-flex; border: 1px solid var(--input-border); border-radius: 8px; overflow: hidden; background: #fff; }
-    .seg label { padding: 7px 14px; font-size: 14px; font-weight: 600; cursor: pointer; margin: 0; }
+    .seg label { padding: 8px 16px; font-size: 14px; font-weight: 600; cursor: pointer; margin: 0; color: var(--navy); }
     .seg input { position: absolute; opacity: 0; pointer-events: none; }
-    .seg label:has(input:checked) { background: var(--accent); color: #fff; }
+    .seg label:has(input:checked) { background: var(--navy); color: #fff; }
+    .seg label:has(input:focus-visible) { box-shadow: inset 0 0 0 3px var(--gold); }
     .seg label + label { border-left: 1px solid var(--input-border); }
-
-    /* Buy box */
-    details > summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-    details > summary::-webkit-details-marker { display: none; }
-    details > summary::before { content: "▸"; color: var(--muted); }
-    details[open] > summary::before { content: "▾"; }
-    .buybox-body { margin-top: 16px; }
     .note { font-size: 12px; color: var(--warn); margin-top: 4px; }
 
-    /* Add deal + instant screen */
-    .add-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 22px; }
-    .screen-panel {
-      background: var(--bg); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: var(--radius);
-      padding: 18px; align-self: start; position: sticky; top: 12px;
+    /* ---------- Step 1: AI teaser reading ---------- */
+    .teaser-box textarea { min-height: 120px; }
+    .teaser-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
+    .teaser-actions .spacer { flex: 1; }
+    .file-btn { cursor: pointer; }
+    .teaser-status { font-size: 13px; margin-top: 12px; }
+    .teaser-status:empty { display: none; }
+    .teaser-status.error { color: var(--bad); background: var(--bad-bg); border: 1px solid var(--bad-border); border-radius: 8px; padding: 8px 10px; }
+    .teaser-status.ok { color: var(--text); background: var(--gold-soft); border: 1px solid #ecd98f; border-radius: 8px; padding: 8px 10px; }
+    .teaser-status .cost { display: block; color: var(--muted); margin-top: 4px; }
+    .ai-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; background: var(--gold); color: var(--navy); padding: 2px 7px; border-radius: 999px; vertical-align: middle; }
+    /* Fields the AI filled stay highlighted until you edit them */
+    .field.ai-filled input, .field.ai-filled select, .field.ai-filled textarea, .field.ai-filled .seg {
+      background: var(--gold-soft); border-color: var(--gold);
     }
-    .table-wrap { overflow-x: auto; }
-    .sub { display: block; font-size: 11px; color: var(--muted); font-weight: 400; }
+    .field.ai-filled > label::after, .field.ai-filled > .label::after {
+      content: "AI"; margin-left: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+      background: var(--gold); color: var(--navy); padding: 1px 6px; border-radius: 999px; vertical-align: middle;
+    }
+
+    /* ---------- Step 2: facts + buy box check ---------- */
+    .add-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 24px; }
+    .screen-panel {
+      background: var(--bg); border: 1px solid var(--border); border-top: 3px solid var(--gold); border-radius: var(--radius);
+      padding: 16px 18px; align-self: start; position: sticky; top: calc(var(--nav-h) + 16px);
+    }
+    .screen-panel .btn-link { margin-top: 10px; display: inline-block; }
     .checklist { list-style: none; margin: 0; padding: 0; font-size: 14px; }
-    .checklist li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px dashed var(--border); }
+    .checklist li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
     .checklist li:last-child { border-bottom: none; }
     .checklist .mark { font-weight: 700; width: 18px; display: inline-block; }
     .checklist .pass .mark { color: var(--good); }
@@ -129,21 +181,63 @@
     .checklist .unknown .mark { color: var(--muted); }
     .checklist .detail { color: var(--muted); text-align: right; }
     .tag-pref { font-size: 11px; color: var(--muted); font-weight: 400; }
-    .fin { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; font-size: 14px; margin: 0; }
-    .fin dt { color: var(--muted); }
-    .fin dd { margin: 0; font-weight: 600; text-align: right; }
-    .est-badge { font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0; background: var(--warn-bg); color: var(--warn); padding: 1px 7px; border-radius: 999px; }
-    .disclaimer { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
-    .save-box { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 14px; }
+    .form-msg { font-size: 14px; margin-top: 10px; min-height: 20px; }
+    .form-msg.error { color: var(--bad); }
+    .form-msg.ok { color: var(--good); font-weight: 600; }
 
-    /* My assumptions (inputs for the approved financial model template) */
-    .assume-body { margin-top: 16px; }
-    .assume-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 22px; }
-    .assume-grid h3 { color: var(--accent-dark); margin-bottom: 10px; }
+    /* ---------- Step 3: financial model (numbers come only from the approved Excel template) ---------- */
+    .src-badge { font-size: 11px; font-weight: 600; background: var(--navy-soft); color: var(--navy); padding: 2px 8px; border-radius: 999px; letter-spacing: 0; }
+    .model-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 6px; }
+    .model-status { font-size: 13px; margin: 10px 0 0; color: var(--muted); }
+    .model-status:empty { display: none; }
+    .model-status.error { color: var(--bad); background: var(--bad-bg); border: 1px solid var(--bad-border); border-radius: 8px; padding: 8px 10px; }
+    .model-status.stale { color: var(--warn); background: var(--warn-bg); border-radius: 8px; padding: 8px 10px; }
+    .model-results:empty { display: none; }
+    .model-results { margin-top: 18px; }
+    .model-results.stale { opacity: 0.45; }
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .kpi { border: 1px solid var(--border); border-top: 4px solid var(--navy); border-radius: 10px; padding: 12px 14px; background: #fff; display: flex; flex-direction: column; gap: 2px; }
+    .kpi.ok { background: var(--good-bg); border-color: var(--good-border); border-top-color: var(--good); }
+    .kpi.bad { background: var(--bad-bg); border-color: var(--bad-border); border-top-color: var(--bad); }
+    .kpi-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .kpi-value { font-size: 22px; font-weight: 700; color: var(--navy); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+    .kpi-sub { font-size: 13px; color: var(--muted); }
+    .kpi.ok .kpi-sub { color: var(--good); font-weight: 600; }
+    .kpi.bad .kpi-sub { color: var(--bad); font-weight: 600; }
+    .fin { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 14px; margin: 0 0 18px; max-width: 460px; }
+    .fin dt { color: var(--muted); }
+    .fin dd { margin: 0; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+    .results-title { display: flex; gap: 8px 12px; align-items: baseline; flex-wrap: wrap; margin-bottom: 4px; }
+    .results-title .meta { font-weight: 400; }
+    .table-wrap { overflow-x: auto; }
+    table.model { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0 4px; font-variant-numeric: tabular-nums; }
+    table.model th, table.model td { padding: 10px 10px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    table.model tbody tr:nth-child(even) { background: #f8f9fc; }
+    table.model tbody th { text-align: left; white-space: normal; color: var(--text); font-weight: 600; }
+    table.model thead th { font-size: 12px; color: #fff; background: var(--navy); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    table.model thead th:first-child { text-align: left; border-top-left-radius: 8px; }
+    table.model thead th:last-child { border-top-right-radius: 8px; }
+    .sig { display: inline-block; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+    .sig.ok { color: var(--good); background: var(--good-bg); }
+    .sig.bad { color: var(--bad); background: var(--bad-bg); }
+    .scen-cards { display: none; }
+    .scen-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: #fff; }
+    .scen-card h4 { color: var(--navy); font-size: 13px; margin-bottom: 6px; }
+    .scen-card dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; margin: 0; font-size: 14px; align-items: center; }
+    .scen-card dt { color: var(--muted); }
+    .scen-card dd { margin: 0; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .disclaimer { font-size: 12px; color: var(--muted); margin: 12px 0 0; }
+
+    /* ---------- My settings ---------- */
+    .assume-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 28px; margin-bottom: 8px; }
+    .assume-grid h3 { margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid var(--gold); display: inline-block; }
+    .assume-grid > div { display: flex; flex-direction: column; }
+    .assume-grid h3 { align-self: flex-start; }
     .assume-grid .field label { font-weight: 500; }
     .assume-grid .row2 { align-items: end; } /* keep inputs lined up when a label wraps */
     .unit { display: flex; align-items: center; gap: 6px; }
-    .unit span { font-size: 13px; color: var(--muted); min-width: 14px; }
+    .unit input { flex: 1; min-width: 0; }
+    .unit span { font-size: 13px; color: var(--muted); min-width: 14px; flex-shrink: 0; white-space: nowrap; }
     /* "Your equity" is calculated, not typed: greyed out like a disabled input */
     .auto-field input[readonly] { background: var(--neutral-bg); color: var(--muted); border-style: dashed; cursor: default; }
     .auto-field input[readonly]:focus { box-shadow: none; border-color: var(--input-border); }
@@ -154,88 +248,74 @@
     .assume-status:empty { display: none; }
     .assume-status.error { color: var(--bad); }
 
-    /* Financial model panel (numbers come only from the approved Excel template) */
-    .model-panel { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 14px; }
-    .model-panel h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .src-badge { font-size: 11px; font-weight: 600; background: var(--neutral-bg); color: var(--muted); padding: 1px 7px; border-radius: 999px; }
-    .model-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
-    .model-status { font-size: 13px; margin: 6px 0; }
-    .model-status:empty { display: none; }
-    .model-status.error { color: var(--bad); background: var(--bad-bg); border: 1px solid var(--bad-border); border-radius: 8px; padding: 8px 10px; }
-    .model-status.stale { color: var(--warn); background: var(--warn-bg); border-radius: 8px; padding: 8px 10px; }
-    .model-results.stale { opacity: 0.45; }
-    table.model { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 10px; }
-    table.model th, table.model td { padding: 5px 4px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    table.model th:first-child, table.model td:first-child { text-align: left; white-space: normal; color: var(--muted); }
-    table.model thead th { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
-    .check-ok { color: var(--good); font-weight: 600; }
-    .check-bad { color: var(--bad); font-weight: 600; }
-    .form-msg { font-size: 13px; margin-top: 8px; min-height: 18px; }
-    .form-msg.error { color: var(--bad); }
-    .form-msg.ok { color: var(--good); }
-
-    /* AI teaser reading */
-    .teaser-box {
-      border: 1px dashed var(--good-border); background: var(--accent-soft); border-radius: var(--radius);
-      padding: 16px 18px; margin-bottom: 20px;
-    }
-    .teaser-box h3 { margin: 0; color: var(--accent-dark); }
-    .teaser-box textarea { min-height: 90px; margin-top: 10px; }
-    .teaser-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
-    .teaser-actions .spacer { flex: 1; }
-    .file-btn { cursor: pointer; }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .teaser-status { font-size: 13px; margin-top: 10px; }
-    .teaser-status:empty { display: none; }
-    .teaser-status.error { color: var(--bad); background: var(--bad-bg); border: 1px solid var(--bad-border); border-radius: 8px; padding: 8px 10px; }
-    .teaser-status.ok { color: var(--text); background: #fff; border: 1px solid var(--good-border); border-radius: 8px; padding: 8px 10px; }
-    .teaser-status .cost { display: block; color: var(--muted); margin-top: 4px; }
-    .ai-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; background: var(--accent); color: #fff; padding: 1px 6px; border-radius: 999px; vertical-align: middle; }
-    /* Fields the AI filled stay highlighted until you edit them */
-    .field.ai-filled input, .field.ai-filled select, .field.ai-filled textarea, .field.ai-filled .seg {
-      background: var(--accent-soft); border-color: var(--accent);
-    }
-    .field.ai-filled > label::after, .field.ai-filled > .label::after {
-      content: "AI"; margin-left: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
-      background: var(--accent); color: #fff; padding: 1px 6px; border-radius: 999px; vertical-align: middle;
-    }
-
-    /* Pipeline */
-    .stage-group { margin-top: 18px; }
-    .stage-group h3 { display: flex; align-items: center; gap: 8px; }
-    .count { font-size: 12px; background: var(--accent-soft); color: var(--accent-dark); border-radius: 999px; padding: 1px 8px; font-weight: 600; }
+    /* ---------- Pipeline ---------- */
+    .stage-group + .stage-group { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+    .stage-group h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .count { font-size: 12px; background: var(--navy); color: #fff; border-radius: 999px; padding: 1px 9px; font-weight: 600; }
     .stage-group.empty h3 { color: var(--muted); }
     .stage-group.empty .count { background: var(--neutral-bg); color: var(--muted); }
-    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
     .deal-card {
       border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; background: #fff; font-size: 14px;
-      box-shadow: var(--shadow); transition: border-color 0.15s, box-shadow 0.15s;
+      box-shadow: var(--shadow); transition: border-color 0.15s, box-shadow 0.15s; min-width: 0;
     }
-    .deal-card:hover { border-color: var(--good-border); box-shadow: 0 2px 4px rgba(28, 38, 32, 0.06), 0 6px 16px rgba(28, 38, 32, 0.07); }
+    .deal-card:hover { border-color: #b8c2d6; box-shadow: 0 2px 4px rgba(20, 33, 61, 0.06), 0 6px 16px rgba(20, 33, 61, 0.08); }
     .deal-card.overdue { border-color: var(--bad-border); box-shadow: inset 4px 0 0 var(--bad), var(--shadow); }
     .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+    .deal-name { color: var(--navy); }
     .deal-name a { color: inherit; }
     .badges { display: flex; gap: 4px; flex-shrink: 0; }
-    .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--tag-bg); color: var(--tag-text); white-space: nowrap; }
-    .badge.direct { background: #eaf0f6; color: #3f5670; }
+    .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--navy-soft); color: var(--navy); white-space: nowrap; }
+    .badge.direct { background: var(--gold-soft); color: var(--gold-text); }
     .badge.sample { background: var(--neutral-bg); color: var(--muted); }
     .card-row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 8px 0; }
     .chip { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
     .chip.fit { background: var(--neutral-bg); color: var(--text); }
-    .next { font-size: 13px; padding: 6px 10px; background: var(--bg); border-radius: 8px; }
+    .next { font-size: 13px; padding: 7px 10px; background: var(--bg); border-radius: 8px; }
     .next.overdue { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
     .next.today { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
     .card-actions { display: flex; gap: 6px; margin-top: 10px; align-items: center; }
-    .card-actions select { flex: 1; padding: 5px 8px; font-size: 13px; }
+    .card-actions select { flex: 1; min-width: 0; min-height: 32px; padding: 4px 8px; font-size: 13px; }
     .empty-note { margin: 0; }
+    .pipe-foot { margin: 20px 0 0; }
 
+    /* ---------- Tablet ---------- */
     @media (max-width: 860px) {
       .add-grid, .assume-grid { grid-template-columns: 1fr; }
       .screen-panel { position: static; }
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
-    @media (max-width: 520px) {
-      .row2, .row3, .assumptions { grid-template-columns: 1fr; }
-      section { padding: 18px 16px; }
+    /* ---------- Phone ---------- */
+    @media (max-width: 640px) {
+      :root { --nav-h: 104px; }
+      body { font-size: 15px; }
+      .topnav-inner { flex-wrap: wrap; gap: 0; padding: 0 16px; }
+      .brand { padding: 12px 0 8px; font-size: 18px; }
+      .logo { width: 28px; height: 28px; }
+      .navlinks { width: 100%; margin: 0; gap: 0; }
+      .navlinks a { flex: 1; text-align: center; padding: 10px 4px 9px; }
+      .navlinks .long { display: none; }
+      .navlinks .short { display: inline; }
+      .container { padding: 20px 16px 48px; }
+      h1 { font-size: 24px; }
+      .lede { font-size: 15px; }
+      .card { padding: 18px 16px; margin-bottom: 16px; }
+      .step-head { gap: 12px; }
+      .step-num { width: 28px; height: 28px; font-size: 14px; }
+      h2 { font-size: 18px; }
+      .row2, .row3 { grid-template-columns: 1fr; }
+      .seg { display: flex; }
+      .seg label { flex: 1; text-align: center; padding: 9px 8px; }
+      .teaser-actions .spacer { display: none; }
+      #t-read { width: 100%; }
+      .model-actions .btn, .btn-row .btn, .page-head-row .btn { flex: 1 1 100%; }
+      .page-head-row { align-items: stretch; }
+      .kpi-value { font-size: 19px; }
+      .table-wrap { display: none; }
+      .scen-cards { display: grid; gap: 10px; }
+      .fin { max-width: none; }
+      .cards { grid-template-columns: 1fr; }
+      .checklist .detail { overflow-wrap: anywhere; }
     }
   </style>
   <!-- PostHog analytics (US cloud). Pageviews, clicks, session replay, and 5 custom events (see track() below).
@@ -257,298 +337,351 @@
   </script>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <span class="eyebrow">Local prototype · Build 1</span>
-      <h1>
+  <!-- Top navigation: one page, three views. The address (#/analyze, #/pipeline, #/settings) picks the view,
+       so the back button and refresh work. -->
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a class="brand" href="#/analyze" aria-label="SearchDesk home">
         <!-- Logo: a flat desk (top + two legs) with a small laptop on it -->
         <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
-          <g fill="#2f7d4f">
+          <g class="logo-desk">
             <rect x="10" y="7" width="13" height="9" rx="1.5" />
             <rect x="8" y="16.4" width="17" height="2.1" rx="1" />
             <rect x="2.5" y="19" width="27" height="3.2" rx="1.6" />
             <rect x="5.5" y="21" width="3" height="9" rx="1.2" />
             <rect x="23.5" y="21" width="3" height="9" rx="1.2" />
           </g>
-          <rect x="11.8" y="8.8" width="9.4" height="5.6" rx="0.6" fill="#fff" />
+          <rect class="logo-screen" x="11.8" y="8.8" width="9.4" height="5.6" rx="0.6" />
         </svg>
-        SearchDesk
-      </h1>
-      <p class="tagline">Every deal, from brokers or direct outreach, captured, screened, and moved forward in one pipeline.</p>
-      <div class="cta-row">
-        <a class="btn btn-secondary" href="#buybox">1. Buy box</a>
-        <a class="btn btn-secondary" href="#assumptions">2. My assumptions</a>
-        <a class="btn" href="#add">3. Add a deal</a>
-        <a class="btn btn-secondary" href="#pipeline">4. Pipeline</a>
-      </div>
-      <p class="meta">Data is saved in this browser only. All numbers are rough estimates for screening, not financial or investment advice.</p>
-    </header>
+        <span>SearchDesk</span>
+      </a>
+      <nav class="navlinks" aria-label="Main">
+        <a href="#/analyze" data-view="analyze">Analyze<span class="long"> a deal</span></a>
+        <a href="#/pipeline" data-view="pipeline">Pipeline</a>
+        <a href="#/settings" data-view="settings"><span class="long">My settings</span><span class="short">Settings</span></a>
+      </nav>
+    </div>
+  </header>
 
-    <!-- 1. BUY BOX -->
-    <section id="buybox">
-      <details>
-        <summary><h2>1. Your buy box</h2><span id="bb-summary" class="meta ph-mask"></span></summary>
-        <div class="buybox-body">
-          <div class="field">
-            <span class="label">Target industries <span class="hint">(must match)</span></span>
-            <div class="checks" id="bb-industries"></div>
-          </div>
-          <div class="field">
-            <label for="bb-states">Target states <span class="hint">(must match; two-letter codes, comma separated)</span></label>
-            <input type="text" id="bb-states" />
-            <div class="note" id="bb-states-note"></div>
-          </div>
-          <div class="row2">
-            <div class="field">
-              <label for="bb-sde-min">SDE minimum <span class="hint">(must match, for SDE deals)</span></label>
-              <input type="text" id="bb-sde-min" inputmode="decimal" />
-            </div>
-            <div class="field">
-              <label for="bb-sde-max">SDE maximum</label>
-              <input type="text" id="bb-sde-max" inputmode="decimal" />
-            </div>
-          </div>
-          <div class="row2">
-            <div class="field">
-              <label for="bb-ebitda-min">EBITDA minimum <span class="hint">(must match, for EBITDA deals)</span></label>
-              <input type="text" id="bb-ebitda-min" inputmode="decimal" />
-            </div>
-            <div class="field">
-              <label for="bb-ebitda-max">EBITDA maximum</label>
-              <input type="text" id="bb-ebitda-max" inputmode="decimal" />
-            </div>
-          </div>
-          <div class="field">
-            <span class="label">Seller situation <span class="hint">(preference)</span></span>
-            <div class="checks"><label><input type="checkbox" id="bb-retiring" /> Prefer a retiring owner</label></div>
-          </div>
-          <div class="field">
-            <span class="label">Growth you're looking for <span class="hint">(preference)</span></span>
-            <div class="checks" id="bb-growth"></div>
-          </div>
-          <button type="button" class="btn-link" id="bb-reset">Reset buy box to defaults</button>
+  <main class="container">
+
+    <!-- ================= VIEW: ANALYZE A DEAL (home) ================= -->
+    <div class="view" id="view-analyze" data-view="analyze">
+      <div class="page-head">
+        <h1 id="form-title" class="ph-mask">Analyze a deal</h1>
+        <p class="lede">Paste a broker teaser, check the facts, and run your approved financial model.</p>
+        <div class="edit-banner" id="edit-banner" hidden>
+          <span>You're editing a saved deal. Changes are saved when you click <strong>Update deal</strong>.</span>
+          <button type="button" class="btn-link" id="cancel-edit-top">Start a new deal instead</button>
         </div>
-      </details>
-    </section>
+      </div>
 
-    <!-- 2. MY ASSUMPTIONS: inputs for the approved financial model template (model/searchdesk-model-template.xlsx) -->
-    <section id="assumptions">
-      <details>
-        <summary><h2>2. My assumptions</h2><span id="as-summary" class="meta ph-mask"></span></summary>
-        <div class="assume-body">
-          <p class="meta" style="margin-top:0">These go into your approved Excel model (Assumptions sheet) for every deal. Set them once; they're saved in this browser. Defaults come from the template.</p>
-          <div class="assume-status" id="as-status" role="status"></div>
-          <div class="assume-grid">
+      <!-- STEP 1: AI teaser reading (needs the server: npm start) -->
+      <section class="card step" id="add">
+        <div class="step-head">
+          <span class="step-num" aria-hidden="true">1</span>
+          <div>
+            <h2>Add teaser <span class="ai-tag">AI</span></h2>
+            <p class="meta">Paste the teaser text or upload a PDF. Claude reads it and fills in step 2. Skip this to type the facts yourself.</p>
+          </div>
+        </div>
+        <div class="teaser-box" id="teaser-box">
+          <textarea id="t-text" placeholder="Paste the teaser text here, or upload a PDF teaser…" aria-label="Teaser text"></textarea>
+          <div class="teaser-actions">
+            <label class="btn btn-secondary file-btn">Upload PDF<input type="file" id="t-pdf" accept="application/pdf,.pdf" hidden /></label>
+            <span class="meta" id="t-file"></span>
+            <button type="button" class="btn-link" id="t-file-clear" hidden>Remove PDF</button>
+            <span class="spacer"></span>
+            <button type="button" class="btn" id="t-read">Read teaser</button>
+          </div>
+          <div class="teaser-status" id="t-status" role="status"></div>
+        </div>
+      </section>
+
+      <form id="deal-form" novalidate>
+        <!-- STEP 2: review the facts + buy box check -->
+        <section class="card step">
+          <div class="step-head">
+            <span class="step-num" aria-hidden="true">2</span>
             <div>
-              <h3>Financing</h3>
+              <h2>Review facts</h2>
+              <p class="meta">Check every field. Fields marked <span class="ai-tag">AI</span> came from the teaser; editing one clears the mark.</p>
+            </div>
+          </div>
+          <div class="add-grid">
+            <div>
               <div class="field">
-                <span class="label">Senior loan is SBA 7(a)?</span>
+                <span class="label">Channel</span>
                 <div class="seg">
-                  <label><input type="radio" name="as-seniorIsSba" value="Yes" /> Yes</label>
-                  <label><input type="radio" name="as-seniorIsSba" value="No" /> No</label>
+                  <label><input type="radio" name="channel" value="Broker" checked /> Broker</label>
+                  <label><input type="radio" name="channel" value="Direct outreach" /> Direct outreach</label>
                 </div>
               </div>
               <div class="row2">
-                <div class="field"><label for="as-seniorPct">Senior loan (% of total uses)</label><div class="unit"><input type="number" id="as-seniorPct" data-kind="pct" step="1" min="0" max="100" /><span>%</span></div></div>
-                <div class="field"><label for="as-seniorRate">Senior loan rate (annual)</label><div class="unit"><input type="number" id="as-seniorRate" data-kind="pct" step="0.25" min="0" max="30" /><span>%</span></div></div>
+                <div class="field">
+                  <label for="f-name">Business name</label>
+                  <input type="text" id="f-name" placeholder="e.g., Project Harbor" />
+                </div>
+                <div class="field">
+                  <label for="f-industry">Industry</label>
+                  <select id="f-industry"></select>
+                </div>
               </div>
-              <div class="field"><label for="as-seniorTerm">Senior loan term</label><div class="unit"><input type="number" id="as-seniorTerm" data-kind="years" step="1" min="1" max="30" /><span>yrs</span></div></div>
               <div class="row2">
-                <div class="field"><label for="as-sellerPct">Seller note (% of total uses)</label><div class="unit"><input type="number" id="as-sellerPct" data-kind="pct" step="1" min="0" max="100" /><span>%</span></div></div>
-                <div class="field"><label for="as-sellerRate">Seller note rate (annual)</label><div class="unit"><input type="number" id="as-sellerRate" data-kind="pct" step="0.25" min="0" max="30" /><span>%</span></div></div>
+                <div class="field">
+                  <label for="f-desc">What they do <span class="hint">(optional)</span></label>
+                  <input type="text" id="f-desc" placeholder="e.g., Commercial cleaning" />
+                </div>
+                <div class="field">
+                  <label for="f-state">State</label>
+                  <select id="f-state"></select>
+                </div>
               </div>
               <div class="row2">
-                <div class="field"><label for="as-sellerStandby">Seller note standby (years, no payments)</label><div class="unit"><input type="number" id="as-sellerStandby" data-kind="years" step="1" min="0" max="10" /><span>yrs</span></div></div>
-                <div class="field"><label for="as-sellerAmort">Seller note amortization (years after standby)</label><div class="unit"><input type="number" id="as-sellerAmort" data-kind="years" step="1" min="1" max="30" /><span>yrs</span></div></div>
+                <div class="field">
+                  <label for="f-contact">Contact name</label>
+                  <input type="text" id="f-contact" />
+                </div>
+                <div class="field">
+                  <label for="f-role">Contact role</label>
+                  <select id="f-role">
+                    <option>Broker</option>
+                    <option>Owner</option>
+                    <option>Other</option>
+                  </select>
+                </div>
               </div>
-              <div class="field"><label for="as-investorPct">Outside investor equity (% of total uses) <span class="hint">(other people's money, not yours; add more outside investors in Excel)</span></label><div class="unit"><input type="number" id="as-investorPct" data-kind="pct" step="1" min="0" max="100" /><span>%</span></div></div>
-              <div class="field auto-field" id="as-equity-field"><label for="as-equity">Your equity (% of total uses) <span class="hint">(auto: 100% minus senior loan, seller note, and outside investors)</span></label><div class="unit"><input type="text" id="as-equity" readonly tabindex="-1" aria-readonly="true" /><span>%</span></div></div>
-              <div class="sources-total" id="as-total" role="status"></div>
+              <div class="field">
+                <label for="f-link">Listing link <span class="hint">(optional)</span></label>
+                <input type="url" id="f-link" placeholder="https://" />
+              </div>
+              <div class="field" id="earnings-type-field">
+                <span class="label">Earnings type</span>
+                <div class="seg">
+                  <label><input type="radio" name="earningsType" value="SDE" checked /> SDE</label>
+                  <label><input type="radio" name="earningsType" value="EBITDA" /> EBITDA</label>
+                </div>
+              </div>
+              <div class="row3">
+                <div class="field">
+                  <label for="f-price">Asking price <span class="hint" id="price-hint"></span></label>
+                  <input type="text" id="f-price" inputmode="decimal" placeholder="e.g., 2.4M" />
+                </div>
+                <div class="field">
+                  <label for="f-earnings" id="earnings-label">SDE</label>
+                  <input type="text" id="f-earnings" inputmode="decimal" placeholder="e.g., 750K" />
+                </div>
+                <div class="field">
+                  <label for="f-revenue">Revenue</label>
+                  <input type="text" id="f-revenue" inputmode="decimal" placeholder="e.g., 3.9M" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="f-offer">Your offer price <span class="hint">(optional; leave blank to model the asking price)</span></label>
+                <input type="text" id="f-offer" inputmode="decimal" placeholder="e.g., 2.2M" />
+              </div>
+              <div class="field" id="replace-owner-row" hidden>
+                <div class="checks"><label><input type="checkbox" id="f-replace-owner" /> I'll replace the owner and EBITDA doesn't cover a manager (subtract my salary)</label></div>
+              </div>
+              <div class="row2">
+                <div class="field">
+                  <label for="f-growth">Growth</label>
+                  <select id="f-growth"></select>
+                </div>
+                <div class="field">
+                  <label for="f-reason">Reason for sale</label>
+                  <select id="f-reason"></select>
+                </div>
+              </div>
+              <div class="field">
+                <label for="f-notes">Notes <span class="hint">(optional)</span></label>
+                <textarea id="f-notes"></textarea>
+              </div>
             </div>
+
+            <aside class="screen-panel ph-mask">
+              <div id="screen"></div>
+              <a class="btn-link" href="#/settings">Edit my buy box</a>
+            </aside>
+          </div>
+        </section>
+
+        <!-- STEP 3: financial model. Every number here comes from the approved Excel template, calculated on the server -->
+        <section class="card step" id="model-panel">
+          <div class="step-head">
+            <span class="step-num" aria-hidden="true">3</span>
             <div>
-              <h3>Deal costs</h3>
-              <div class="field"><label for="as-closingCostPct">Closing costs (% of purchase price)</label><div class="unit"><input type="number" id="as-closingCostPct" data-kind="pct" step="0.5" min="0" max="25" /><span>%</span></div></div>
-              <div class="field"><label for="as-cushionMonths">Extra cash cushion (months of operating expenses)</label><div class="unit"><input type="number" id="as-cushionMonths" data-kind="number" step="0.5" min="0" max="24" /><span>mo</span></div></div>
-              <div class="field"><label for="as-sbaFeePct">SBA guarantee fee (% of senior loan, if SBA)</label><div class="unit"><input type="number" id="as-sbaFeePct" data-kind="pct" step="0.25" min="0" max="10" /><span>%</span></div></div>
-            </div>
-            <div>
-              <h3>Operating</h3>
-              <div class="field"><label for="as-buyerSalary">Your salary ($/yr)</label><div class="unit"><span>$</span><input type="number" id="as-buyerSalary" data-kind="money" step="5000" min="0" max="2000000" /></div></div>
-              <div class="field"><label for="as-capexPct">Maintenance capex (% of revenue)</label><div class="unit"><input type="number" id="as-capexPct" data-kind="pct" step="0.5" min="0" max="50" /><span>%</span></div></div>
-              <div class="field"><label for="as-taxRate">Tax rate</label><div class="unit"><input type="number" id="as-taxRate" data-kind="pct" step="1" min="0" max="60" /><span>%</span></div></div>
-              <div class="field"><label for="as-targetDscr">Target DSCR (minimum you or your lender accept)</label><div class="unit"><input type="number" id="as-targetDscr" data-kind="number" step="0.05" min="0.5" max="5" /><span>x</span></div></div>
-              <div class="field"><label for="as-targetIrr">Target equity return (IRR)</label><div class="unit"><input type="number" id="as-targetIrr" data-kind="pct" step="1" min="0" max="200" /><span>%</span></div></div>
+              <h2>Run model <span class="src-badge">your approved Excel template</span></h2>
+              <p class="meta">Uses the facts above and My assumptions: <span id="as-summary" class="ph-mask"></span> <a href="#/settings" id="as-link">Edit</a></p>
             </div>
           </div>
-          <button type="button" class="btn-link" id="as-reset">Reset assumptions to the template's defaults</button>
-        </div>
-      </details>
-    </section>
+          <div class="model-actions">
+            <button type="button" class="btn" id="m-run">Run financial model</button>
+            <button type="button" class="btn btn-secondary" id="m-download" disabled>Download Excel model</button>
+          </div>
+          <div class="model-status" id="m-status" role="status"></div>
+          <div class="model-results ph-mask" id="m-results"></div>
+        </section>
 
-    <!-- 3. ADD A DEAL + INSTANT SCREEN -->
-    <section id="add">
-      <div class="section-head"><h2 id="form-title" class="ph-mask">3. Add a deal</h2><span class="meta">The screen on the right updates as you type.</span></div>
-
-      <!-- AI teaser reading: needs the local server (npm start) -->
-      <div class="teaser-box" id="teaser-box">
-        <div class="section-head" style="margin-bottom:0">
-          <h3>Paste a teaser <span class="ai-tag">AI</span></h3>
-          <span class="meta">Claude reads it and fills in the form below. Check every field before saving.</span>
-        </div>
-        <textarea id="t-text" placeholder="Paste the teaser text here, or upload a PDF teaser…" aria-label="Teaser text"></textarea>
-        <div class="teaser-actions">
-          <label class="btn btn-secondary btn-small file-btn">Upload PDF<input type="file" id="t-pdf" accept="application/pdf,.pdf" hidden /></label>
-          <span class="meta" id="t-file"></span>
-          <button type="button" class="btn-link" id="t-file-clear" hidden>Remove PDF</button>
-          <span class="spacer"></span>
-          <button type="button" class="btn" id="t-read">Read teaser</button>
-        </div>
-        <div class="teaser-status" id="t-status" role="status"></div>
-      </div>
-
-      <form id="deal-form" novalidate>
-        <div class="add-grid">
-          <div>
-            <div class="field">
-              <span class="label">Channel</span>
-              <div class="seg">
-                <label><input type="radio" name="channel" value="Broker" checked /> Broker</label>
-                <label><input type="radio" name="channel" value="Direct outreach" /> Direct outreach</label>
-              </div>
-            </div>
-            <div class="row2">
-              <div class="field">
-                <label for="f-name">Business name</label>
-                <input type="text" id="f-name" placeholder="e.g., Project Harbor" />
-              </div>
-              <div class="field">
-                <label for="f-industry">Industry</label>
-                <select id="f-industry"></select>
-              </div>
-            </div>
-            <div class="row2">
-              <div class="field">
-                <label for="f-desc">What they do <span class="hint">(optional)</span></label>
-                <input type="text" id="f-desc" placeholder="e.g., Commercial cleaning" />
-              </div>
-              <div class="field">
-                <label for="f-state">State</label>
-                <select id="f-state"></select>
-              </div>
-            </div>
-            <div class="row2">
-              <div class="field">
-                <label for="f-contact">Contact name</label>
-                <input type="text" id="f-contact" />
-              </div>
-              <div class="field">
-                <label for="f-role">Contact role</label>
-                <select id="f-role">
-                  <option>Broker</option>
-                  <option>Owner</option>
-                  <option>Other</option>
-                </select>
-              </div>
-            </div>
-            <div class="field">
-              <label for="f-link">Listing link <span class="hint">(optional)</span></label>
-              <input type="url" id="f-link" placeholder="https://" />
-            </div>
-            <div class="field" id="earnings-type-field">
-              <span class="label">Earnings type</span>
-              <div class="seg">
-                <label><input type="radio" name="earningsType" value="SDE" checked /> SDE</label>
-                <label><input type="radio" name="earningsType" value="EBITDA" /> EBITDA</label>
-              </div>
-            </div>
-            <div class="row3">
-              <div class="field">
-                <label for="f-price">Asking price <span class="hint" id="price-hint"></span></label>
-                <input type="text" id="f-price" inputmode="decimal" placeholder="e.g., 2.4M" />
-              </div>
-              <div class="field">
-                <label for="f-earnings" id="earnings-label">SDE</label>
-                <input type="text" id="f-earnings" inputmode="decimal" placeholder="e.g., 750K" />
-              </div>
-              <div class="field">
-                <label for="f-revenue">Revenue</label>
-                <input type="text" id="f-revenue" inputmode="decimal" placeholder="e.g., 3.9M" />
-              </div>
-            </div>
-            <div class="field">
-              <label for="f-offer">Your offer price <span class="hint">(optional; leave blank to model the asking price)</span></label>
-              <input type="text" id="f-offer" inputmode="decimal" placeholder="e.g., 2.2M" />
-            </div>
-            <div class="field" id="replace-owner-row" hidden>
-              <div class="checks"><label><input type="checkbox" id="f-replace-owner" /> I'll replace the owner and EBITDA doesn't cover a manager (subtract my salary)</label></div>
-            </div>
-            <div class="row2">
-              <div class="field">
-                <label for="f-growth">Growth</label>
-                <select id="f-growth"></select>
-              </div>
-              <div class="field">
-                <label for="f-reason">Reason for sale</label>
-                <select id="f-reason"></select>
-              </div>
-            </div>
-            <div class="field">
-              <label for="f-notes">Notes <span class="hint">(paste teaser text here)</span></label>
-              <textarea id="f-notes"></textarea>
+        <!-- STEP 4: save to the pipeline -->
+        <section class="card step save-box">
+          <div class="step-head">
+            <span class="step-num" aria-hidden="true">4</span>
+            <div>
+              <h2>Save to pipeline</h2>
+              <p class="meta">Optional: keep the deal and its next step in your pipeline.</p>
             </div>
           </div>
-
-          <aside class="screen-panel ph-mask">
-            <h3>Instant screen</h3>
-            <div id="screen"></div>
-
-            <!-- Financial model: every number here comes from the approved Excel template, calculated on the server -->
-            <div class="model-panel" id="model-panel">
-              <h3>Financial model <span class="src-badge">from your approved Excel template</span></h3>
-              <p class="meta" style="margin:0">Review the deal's numbers first, then run your model with <a href="#assumptions" id="as-link">My assumptions</a>.</p>
-              <div class="model-actions">
-                <button type="button" class="btn" id="m-run">Run financial model</button>
-                <button type="button" class="btn btn-secondary" id="m-download" disabled>Download Excel model</button>
-              </div>
-              <div class="model-status" id="m-status" role="status"></div>
-              <div class="model-results" id="m-results"></div>
+          <div class="row3">
+            <div class="field">
+              <label for="f-stage">Stage</label>
+              <select id="f-stage"></select>
             </div>
-
-            <div class="save-box">
-              <h3>Save to pipeline</h3>
-              <div class="field">
-                <label for="f-stage">Stage</label>
-                <select id="f-stage"></select>
-              </div>
-              <div class="field">
-                <label for="f-next">Next step</label>
-                <input type="text" id="f-next" placeholder="e.g., Sign NDA and request CIM" />
-              </div>
-              <div class="field">
-                <label for="f-due">Due date</label>
-                <input type="date" id="f-due" />
-              </div>
-              <div class="cta-row" style="margin-bottom:0">
-                <button type="submit" class="btn" id="save-btn">Save to pipeline</button>
-                <button type="button" class="btn btn-secondary" id="cancel-btn" hidden>Cancel edit</button>
-              </div>
-              <div class="form-msg ph-mask" id="form-msg"></div>
+            <div class="field">
+              <label for="f-next">Next step</label>
+              <input type="text" id="f-next" placeholder="e.g., Sign NDA and request CIM" />
             </div>
-          </aside>
-        </div>
+            <div class="field">
+              <label for="f-due">Due date</label>
+              <input type="date" id="f-due" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn" id="save-btn">Save to pipeline</button>
+            <button type="button" class="btn btn-secondary" id="cancel-btn" hidden>Cancel edit</button>
+          </div>
+          <div class="form-msg ph-mask" id="form-msg" role="status"></div>
+        </section>
       </form>
-    </section>
+    </div>
 
-    <!-- 4. PIPELINE -->
-    <section id="pipeline">
-      <div class="section-head">
-        <h2>4. Pipeline</h2>
-        <span id="pipe-summary" class="meta"></span>
-        <button type="button" class="btn-link" id="reset-samples">Reload sample deals</button>
+    <!-- ================= VIEW: PIPELINE ================= -->
+    <div class="view" id="view-pipeline" data-view="pipeline" hidden>
+      <div class="page-head page-head-row">
+        <div>
+          <h1>Pipeline</h1>
+          <p class="lede" id="pipe-summary"></p>
+        </div>
+        <button type="button" class="btn" id="new-deal">+ Analyze a new deal</button>
       </div>
-      <div id="board" class="ph-mask"></div>
-    </section>
-  </div>
+      <section class="card" id="pipeline">
+        <div id="board" class="ph-mask"></div>
+        <p class="pipe-foot"><button type="button" class="btn-link" id="reset-samples">Reload sample deals</button></p>
+      </section>
+    </div>
+
+    <!-- ================= VIEW: MY SETTINGS ================= -->
+    <div class="view" id="view-settings" data-view="settings" hidden>
+      <div class="page-head">
+        <h1>My settings</h1>
+        <p class="lede">Set these once. They're saved in this browser and used for every deal.</p>
+        <div class="callout" id="settings-welcome" hidden>
+          <strong>Welcome to SearchDesk.</strong> Check My assumptions below (they start from your Excel template's defaults), then
+          <a href="#/analyze">analyze your first deal</a>.
+        </div>
+      </div>
+
+      <!-- MY ASSUMPTIONS: inputs for the approved financial model template (model/searchdesk-model-template.xlsx) -->
+      <section class="card" id="assumptions">
+        <div class="card-head">
+          <h2>My assumptions</h2>
+          <p class="meta">These go into your approved Excel model (Assumptions sheet) for every deal. Defaults come from the template.</p>
+        </div>
+        <div class="assume-status" id="as-status" role="status"></div>
+        <div class="assume-grid">
+          <div>
+            <h3>Financing</h3>
+            <div class="field">
+              <span class="label">Senior loan is SBA 7(a)?</span>
+              <div class="seg">
+                <label><input type="radio" name="as-seniorIsSba" value="Yes" /> Yes</label>
+                <label><input type="radio" name="as-seniorIsSba" value="No" /> No</label>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field"><label for="as-seniorPct">Senior loan (% of total uses)</label><div class="unit"><input type="number" id="as-seniorPct" data-kind="pct" step="1" min="0" max="100" /><span>%</span></div></div>
+              <div class="field"><label for="as-seniorRate">Senior loan rate (annual)</label><div class="unit"><input type="number" id="as-seniorRate" data-kind="pct" step="0.25" min="0" max="30" /><span>%</span></div></div>
+            </div>
+            <div class="field"><label for="as-seniorTerm">Senior loan term</label><div class="unit"><input type="number" id="as-seniorTerm" data-kind="years" step="1" min="1" max="30" /><span>yrs</span></div></div>
+            <div class="row2">
+              <div class="field"><label for="as-sellerPct">Seller note (% of total uses)</label><div class="unit"><input type="number" id="as-sellerPct" data-kind="pct" step="1" min="0" max="100" /><span>%</span></div></div>
+              <div class="field"><label for="as-sellerRate">Seller note rate (annual)</label><div class="unit"><input type="number" id="as-sellerRate" data-kind="pct" step="0.25" min="0" max="30" /><span>%</span></div></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label for="as-sellerStandby">Seller note standby (years, no payments)</label><div class="unit"><input type="number" id="as-sellerStandby" data-kind="years" step="1" min="0" max="10" /><span>yrs</span></div></div>
+              <div class="field"><label for="as-sellerAmort">Seller note amortization (years after standby)</label><div class="unit"><input type="number" id="as-sellerAmort" data-kind="years" step="1" min="1" max="30" /><span>yrs</span></div></div>
+            </div>
+            <div class="field"><label for="as-investorPct">Outside investor equity (% of total uses) <span class="hint">(other people's money, not yours; add more outside investors in Excel)</span></label><div class="unit"><input type="number" id="as-investorPct" data-kind="pct" step="1" min="0" max="100" /><span>%</span></div></div>
+            <div class="field auto-field" id="as-equity-field"><label for="as-equity">Your equity (% of total uses) <span class="hint">(auto: 100% minus senior loan, seller note, and outside investors)</span></label><div class="unit"><input type="text" id="as-equity" readonly tabindex="-1" aria-readonly="true" /><span>%</span></div></div>
+            <div class="sources-total" id="as-total" role="status"></div>
+          </div>
+          <div>
+            <h3>Deal costs</h3>
+            <div class="field"><label for="as-closingCostPct">Closing costs (% of purchase price)</label><div class="unit"><input type="number" id="as-closingCostPct" data-kind="pct" step="0.5" min="0" max="25" /><span>%</span></div></div>
+            <div class="field"><label for="as-cushionMonths">Extra cash cushion (months of operating expenses)</label><div class="unit"><input type="number" id="as-cushionMonths" data-kind="number" step="0.5" min="0" max="24" /><span>mo</span></div></div>
+            <div class="field"><label for="as-sbaFeePct">SBA guarantee fee (% of senior loan, if SBA)</label><div class="unit"><input type="number" id="as-sbaFeePct" data-kind="pct" step="0.25" min="0" max="10" /><span>%</span></div></div>
+          </div>
+          <div>
+            <h3>Operating &amp; targets</h3>
+            <div class="field"><label for="as-buyerSalary">Your salary ($/yr)</label><div class="unit"><span>$</span><input type="number" id="as-buyerSalary" data-kind="money" step="5000" min="0" max="2000000" /></div></div>
+            <div class="field"><label for="as-capexPct">Maintenance capex (% of revenue)</label><div class="unit"><input type="number" id="as-capexPct" data-kind="pct" step="0.5" min="0" max="50" /><span>%</span></div></div>
+            <div class="field"><label for="as-taxRate">Tax rate</label><div class="unit"><input type="number" id="as-taxRate" data-kind="pct" step="1" min="0" max="60" /><span>%</span></div></div>
+            <div class="field"><label for="as-targetDscr">Target DSCR (minimum you or your lender accept)</label><div class="unit"><input type="number" id="as-targetDscr" data-kind="number" step="0.05" min="0.5" max="5" /><span>x</span></div></div>
+            <div class="field"><label for="as-targetIrr">Target equity return (IRR)</label><div class="unit"><input type="number" id="as-targetIrr" data-kind="pct" step="1" min="0" max="200" /><span>%</span></div></div>
+          </div>
+        </div>
+        <button type="button" class="btn-link" id="as-reset">Reset assumptions to the template's defaults</button>
+      </section>
+
+      <!-- MY BUY BOX -->
+      <section class="card" id="buybox">
+        <div class="card-head">
+          <h2>My buy box</h2>
+          <p class="meta ph-mask" id="bb-summary"></p>
+        </div>
+        <div class="field">
+          <span class="label">Target industries <span class="hint">(must match)</span></span>
+          <div class="checks" id="bb-industries"></div>
+        </div>
+        <div class="field">
+          <label for="bb-states">Target states <span class="hint">(must match; two-letter codes, comma separated)</span></label>
+          <input type="text" id="bb-states" />
+          <div class="note" id="bb-states-note"></div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="bb-sde-min">SDE minimum <span class="hint">(must match, for SDE deals)</span></label>
+            <input type="text" id="bb-sde-min" inputmode="decimal" />
+          </div>
+          <div class="field">
+            <label for="bb-sde-max">SDE maximum</label>
+            <input type="text" id="bb-sde-max" inputmode="decimal" />
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="bb-ebitda-min">EBITDA minimum <span class="hint">(must match, for EBITDA deals)</span></label>
+            <input type="text" id="bb-ebitda-min" inputmode="decimal" />
+          </div>
+          <div class="field">
+            <label for="bb-ebitda-max">EBITDA maximum</label>
+            <input type="text" id="bb-ebitda-max" inputmode="decimal" />
+          </div>
+        </div>
+        <div class="field">
+          <span class="label">Seller situation <span class="hint">(preference)</span></span>
+          <div class="checks"><label><input type="checkbox" id="bb-retiring" /> Prefer a retiring owner</label></div>
+        </div>
+        <div class="field">
+          <span class="label">Growth you're looking for <span class="hint">(preference)</span></span>
+          <div class="checks" id="bb-growth"></div>
+        </div>
+        <button type="button" class="btn-link" id="bb-reset">Reset buy box to defaults</button>
+      </section>
+    </div>
+
+    <p class="footnote">Data is saved in this browser only. All numbers are rough estimates for screening, not financial or investment advice.</p>
+  </main>
 
   <script>
     // ================= Settings =================
@@ -749,7 +882,7 @@
         buyBox.preferRetiring ? "retiring owner preferred" : null,
         buyBox.growth.length ? buyBox.growth.join(" / ").toLowerCase() : null
       ].filter(Boolean);
-      $("bb-summary").textContent = parts.join(" · ") + " (click to edit)";
+      $("bb-summary").textContent = parts.join(" · ");
     }
 
     function readBuyBox() {
@@ -868,7 +1001,7 @@
       total.className = "sources-total" + (negative ? " bad" : "");
       const pct = k => roundPct(assumptions[k]) + "%";
       $("as-summary").textContent = `${pct("seniorPct")} senior${assumptions.seniorIsSba === "Yes" ? " (SBA)" : ""} at ${pct("seniorRate")} · ` +
-        `${pct("sellerPct")} seller note · ${pct("investorPct")} outside investors · ${roundPct(eq)}% your equity · target DSCR ${assumptions.targetDscr}x (click to edit)`;
+        `${pct("sellerPct")} seller note · ${pct("investorPct")} outside investors · ${roundPct(eq)}% your equity · target DSCR ${assumptions.targetDscr}x · target IRR ${pct("targetIrr")}.`;
     }
 
     function onAssumptionsChange() {
@@ -946,28 +1079,52 @@
       $("m-status").className = "model-status" + (kind ? " " + kind : "");
     }
 
-    function renderModelResults(r) {
+    // ctx: { targetIrr, asking, offer } as they were when the model ran.
+    // The green/red signals only compare the template's own outputs with your targets (no new math).
+    function renderModelResults(r, ctx) {
       const pct = x => x == null ? "n/a" : (x * 100).toFixed(1) + "%";
       const mult = x => x == null ? "n/a" : x.toFixed(2) + "x";
       const usd = x => x == null ? "No limit" : money(x);
       const cols = r.scenarios;
-      const row = (label, fn) => `<tr><td>${label}</td>${cols.map(s => `<td>${fn(s)}</td>`).join("")}</tr>`;
+      const dscrOk = s => s.lowestDscr != null && s.lowestDscr >= r.targetDscr;
+      const irrOk = s => s.irr == null || ctx.targetIrr == null ? null : s.irr >= ctx.targetIrr;
+      const priceOk = s => s.priceCheck !== "Above max";
+      // A pass/fail value: color plus a ✓/✗ so it doesn't rely on color alone
+      const sig = (ok, text) => ok == null ? escapeHtml(text)
+        : `<span class="sig ${ok ? "ok" : "bad"}"><span aria-hidden="true">${ok ? "✓" : "✗"}</span> ${escapeHtml(text)}<span class="sr-only">${ok ? " (meets target)" : " (misses target)"}</span></span>`;
+      const base = cols.find(s => /^base/i.test(s.name)) || cols[0];
+      const kpi = (ok, label, value, sub) =>
+        `<div class="kpi ${ok == null ? "" : ok ? "ok" : "bad"}"><span class="kpi-label">${label}</span><span class="kpi-value">${value}</span><span class="kpi-sub">${sub}</span></div>`;
+      const fields = [
+        ["Lowest DSCR (yrs 1–5)", s => sig(dscrOk(s), mult(s.lowestDscr))],
+        [`Max price at ${r.targetDscr}x DSCR`, s => sig(priceOk(s), usd(s.maxPrice))],
+        ["Price check", s => escapeHtml(s.priceCheck)],
+        ["5-year IRR", s => sig(irrOk(s), pct(s.irr))],
+        ["MOIC", s => mult(s.moic)],
+      ];
       $("m-results").innerHTML = `
+        <div class="kpis">
+          ${kpi(null, "Asking price", ctx.asking != null ? money(ctx.asking) : "n/a",
+            ctx.offer != null ? `Modeled at your offer: ${money(r.purchasePrice)}` : "Modeled at the asking price")}
+          ${kpi(priceOk(base), "Max price · Base case", usd(base.maxPrice), `${escapeHtml(base.priceCheck)} at ${r.targetDscr}x DSCR`)}
+          ${kpi(dscrOk(base), "Lowest DSCR · Base case", mult(base.lowestDscr), `Target ${r.targetDscr}x`)}
+          ${kpi(irrOk(base), "5-year IRR · Base case", pct(base.irr), `Target ${pct(ctx.targetIrr)}`)}
+        </div>
         <dl class="fin">
           <dt>Total uses (everything the deal costs)</dt><dd>${money(r.totalUses)}</dd>
           <dt>Your equity (cash you bring)</dt><dd>${money(r.buyerEquity)}</dd>
           <dt>Purchase price used</dt><dd>${money(r.purchasePrice)}</dd>
         </dl>
+        <h3 class="results-title">All scenarios <span class="meta">Targets: ${r.targetDscr}x DSCR · ${pct(ctx.targetIrr)} IRR</span></h3>
         <div class="table-wrap"><table class="model">
           <thead><tr><th>Scenario</th>${cols.map(s => `<th>${escapeHtml(s.name)}</th>`).join("")}</tr></thead>
-          <tbody>
-            ${row("Lowest DSCR (yrs 1–5)", s => `<span class="${s.lowestDscr != null && s.lowestDscr >= r.targetDscr ? "check-ok" : "check-bad"}">${mult(s.lowestDscr)}</span>`)}
-            ${row(`Max price at ${r.targetDscr}x DSCR`, s => usd(s.maxPrice))}
-            ${row("Price check", s => `<span class="${s.priceCheck === "Above max" ? "check-bad" : "check-ok"}">${escapeHtml(s.priceCheck)}</span>`)}
-            ${row("5-year IRR", s => pct(s.irr))}
-            ${row("MOIC", s => mult(s.moic))}
-          </tbody>
+          <tbody>${fields.map(([label, fn]) => `<tr><th scope="row">${label}</th>${cols.map(s => `<td>${fn(s)}</td>`).join("")}</tr>`).join("")}</tbody>
         </table></div>
+        <div class="scen-cards">${cols.map(s => `
+          <div class="scen-card"><h4>${escapeHtml(s.name)}</h4>
+            <dl>${fields.map(([label, fn]) => `<dt>${label}</dt><dd>${fn(s)}</dd>`).join("")}</dl>
+          </div>`).join("")}
+        </div>
         <p class="disclaimer">Calculated by your approved Excel template (v1.0) with My assumptions. Rough estimates for screening only, not financial or lending advice. Download the Excel model for the full schedules.</p>`;
     }
 
@@ -993,7 +1150,7 @@
         return;
       }
       modelResult = { key, results: data.results };
-      renderModelResults(data.results);
+      renderModelResults(data.results, { targetIrr: assumptions.targetIrr, asking: deal.askingPrice, offer: deal.offerPrice });
       updateModelPanel();
     }
 
@@ -1106,20 +1263,22 @@
       modelResult = null; // a different deal: clear the last model run
       $("m-results").innerHTML = "";
       modelError = null;
-      $("form-title").textContent = "3. Edit deal: " + d.name;
+      $("form-title").textContent = "Edit deal: " + d.name;
+      $("edit-banner").hidden = false;
       $("save-btn").textContent = "Update deal";
       $("cancel-btn").hidden = false;
       showMsg("", "");
       updateChannelUI();
       updateEarningsUI();
       renderScreen();
-      $("add").scrollIntoView({ behavior: "smooth" });
+      goTo("analyze");
     }
 
     function resetForm() {
       $("deal-form").reset();
       editingId = null;
-      $("form-title").textContent = "3. Add a deal";
+      $("form-title").textContent = "Analyze a deal";
+      $("edit-banner").hidden = true;
       $("save-btn").textContent = "Save to pipeline";
       $("cancel-btn").hidden = true;
       $("f-role").value = "Broker";
@@ -1345,8 +1504,49 @@
       renderScreen();
     }
 
+    // ----- Views (one page, three views picked by the address: #/analyze, #/pipeline, #/settings) -----
+    // Using the # part of the address means no server routes are needed, and back, forward, and refresh work.
+    const VIEWS = { analyze: "Analyze a deal", pipeline: "Pipeline", settings: "My settings" };
+    // Links from before the views existed (#add, #pipeline, ...) still land on the right view
+    const OLD_LINKS = { "#add": "analyze", "#pipeline": "pipeline", "#assumptions": "settings", "#buybox": "settings" };
+    let defaultView = "analyze";
+
+    function viewFromAddress() {
+      const m = /^#\/([a-z]+)/.exec(location.hash);
+      if (m && VIEWS[m[1]]) return m[1];
+      return OLD_LINKS[location.hash] || null;
+    }
+    function goTo(view) {
+      if (viewFromAddress() === view) showView(view);
+      else location.hash = "#/" + view; // fires hashchange -> onRoute
+    }
+    function showView(view) {
+      document.querySelectorAll(".view").forEach(el => { el.hidden = el.dataset.view !== view; });
+      document.querySelectorAll(".navlinks a").forEach(a => {
+        const on = a.dataset.view === view;
+        a.classList.toggle("active", on);
+        if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+      });
+      document.title = VIEWS[view] + " · SearchDesk";
+      window.scrollTo(0, 0);
+    }
+    function onRoute(e) {
+      let view = viewFromAddress();
+      if (!view || !location.hash.startsWith("#/")) {
+        view = view || defaultView;
+        history.replaceState(null, "", "#/" + view); // tidy the address without adding a history step
+      }
+      showView(view);
+      // PostHog records the first page load itself; count each later view switch as a pageview too
+      if (e) track("$pageview");
+    }
+
     // ----- Wiring -----
     function init() {
+      // First visit (no saved My assumptions yet): open on My settings so they get checked once
+      const firstRun = load(MODEL_ASSUME_KEY, null) == null;
+      if (firstRun) { defaultView = "settings"; $("settings-welcome").hidden = false; }
+
       buyBox = Object.assign({}, DEFAULT_BUYBOX, load(BB_KEY, {}));
       const stored = load(DEAL_KEY, null);
       if (Array.isArray(stored)) {
@@ -1398,6 +1598,9 @@
       document.querySelectorAll('input[name="earningsType"]').forEach(r => r.addEventListener("change", updateEarningsUI));
       form.addEventListener("submit", handleSave);
       $("cancel-btn").addEventListener("click", resetForm);
+      $("cancel-edit-top").addEventListener("click", resetForm);
+      // "+ Analyze a new deal" on the Pipeline view: leave edit mode (a half-typed new deal is kept)
+      $("new-deal").addEventListener("click", () => { if (editingId) resetForm(); goTo("analyze"); });
 
       // My assumptions: shared by every deal, saved in this browser
       $("assumptions").addEventListener("input", onAssumptionsChange);
@@ -1406,7 +1609,6 @@
         try { localStorage.removeItem(MODEL_ASSUME_KEY); } catch (e) { /* storage unavailable */ }
         loadAssumptions(true);
       });
-      $("as-link").addEventListener("click", () => { $("assumptions").querySelector("details").open = true; });
 
       // Financial model panel
       $("m-run").addEventListener("click", runModel);
@@ -1452,6 +1654,9 @@
       updateEarningsUI();
       renderScreen();
       renderPipeline();
+
+      window.addEventListener("hashchange", onRoute);
+      onRoute();
     }
 
     if (typeof document !== "undefined") init();
